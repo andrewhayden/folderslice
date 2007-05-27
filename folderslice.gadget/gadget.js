@@ -1,21 +1,5 @@
 var defaultMessage = "Drag folder(s) here..."
 var gadgetPath = System.Gadget.path;
-var refreshTimer;
-var refreshRateMillis = 1000;
-var jg = null;
-var angle = 25;
-
-// Variables used for drawing...
-var mainDiv;
-var titleDiv;
-var centerX;
-var centerY;
-var fullWidth;
-var fullHeight;
-var pieX;
-var pieY;
-var pieWidth;
-var pieHeight;
 
 // List of archive formats we will not open
 var archiveExtensions = [
@@ -60,36 +44,44 @@ function runloopDebug()
             errorText += ": " + error.description;
         }
 
-        gadgetContent.innerText =  errorText;
+        mainDiv.innerText =  errorText;
     }
 }
 
 function runloop()
 {
-    if (jg == null)
-    {
-        mainDiv = document.getElementById("mainDiv");
-        titleDiv = document.getElementById("titleDiv");
-        fullWidth = mainDiv.style.pixelWidth;
-        fullHeight = mainDiv.style.pixelHeight;
-        centerX = fullWidth / 2;
-        centerY = fullHeight / 2;
-    
-        var smallestDimension = fullHeight;
-        if (fullHeight > fullWidth)
-        {
-            smallestDimension = fullWidth;
-        }
-    
-        pieWidth = smallestDimension * .9;
-        pieHeight = pieWidth;
-        pieX = Math.round(centerX - (pieWidth / 2));
-        pieY = Math.round(centerY - (pieHeight / 2));
+    var mainDiv = null;
+    var titleDiv;
+    var centerX;
+    var centerY;
+    var fullWidth;
+    var fullHeight;
+    var pieX;
+    var pieY;
+    var pieWidth;
+    var pieHeight;
+    var pieRadius;
+    var sliceOffset;
 
-        jg = new jsGraphics(mainDiv);
+    mainDiv = document.getElementById("mainDiv");
+    titleDiv = document.getElementById("titleDiv");
+    fullWidth = mainDiv.style.pixelWidth;
+    fullHeight = mainDiv.style.pixelHeight;
+    centerX = fullWidth / 2;
+    centerY = fullHeight / 2;
+
+    var smallestDimension = fullHeight;
+    if (fullHeight > fullWidth)
+    {
+        smallestDimension = fullWidth;
     }
 
-    //gadgetContent.innerText = "running loop";
+    pieWidth = smallestDimension;
+    pieHeight = pieWidth;
+    sliceOffset = 3;
+    pieRadius = (smallestDimension / 2) - sliceOffset;
+    pieX = centerX;
+    pieY = centerY;
 
     var droppedItem = System.Shell.itemFromFileDrop(event.dataTransfer, 0);
     var target;
@@ -105,7 +97,6 @@ function runloop()
     if (!target.isFolder)
     {
         setText(defaultMessage);
-        jg.clear();
         return;
     }
     else
@@ -121,18 +112,23 @@ function runloop()
 
     var formattedSize = formatSizeNice(targetSizeBytes);
 
-    setText(
-        "Folder '" + target.name + "':"
-        + "\nSize: " + formattedSize + " (" + numVisited + " files)");
+    if (!DEBUG)
+    {
+        setText(
+            "Folder '" + target.name + "':"
+            + "\nSize: " + formattedSize + " (" + numVisited + " files)");
+    }
+    else
+    {
+        debug(
+            "Folder '" + target.name + "':"
+            + "\nSize: " + formattedSize + " (" + numVisited + " files)");
+    }
 
-    jg.clear();
-    jg.setStroke(1);
-    jg.setColor("#0000ff");
-    jg.drawEllipse(pieX, pieY, pieWidth, pieHeight);
-    jg.setColor("#ff0000");
-    jg.fillArc(pieX, pieY, pieWidth, pieHeight, 0, angle);
-    jg.paint();
-    angle+=25;
+    debug("\ndiv at " + mainDiv.style.pixelLeft + "," + mainDiv.style.pixelTop + ", size=" + fullWidth + "x" + fullHeight);
+    debug("\npie at " + pieX + "," + pieY + "; radius=" + pieRadius);
+
+    makePieWithSlice("mainDiv", pieX, pieY, sliceOffset, pieRadius, 50, 100);
 }
 
 function formatSizeNice(bytes)
