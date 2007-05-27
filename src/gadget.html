@@ -1,0 +1,47 @@
+<html>
+<head>
+    <title>Folder Slice</title>
+    <style>
+        body
+        {
+            margin: 0;
+            width: 130px;
+            height: 245px;
+        }
+        #gadgetContent
+        {
+            width: 130px;
+            top: 24px;
+            text-align: center;
+            font-family: Tahoma;
+            font-size: 10pt;
+            position: absolute;
+        }
+        #background
+        {
+            width: 130px;
+            height: 245px;
+            position: absolute;
+            z-index: -1;
+            background-repeat: no-repeat;
+        }
+    </style>
+    <script src="gadget.js" language="javascript" type="text/javascript"></script>
+    <script src="wz_jsgraphics.js" language="javascript" type="text/javascript"></script>
+</head>
+<body
+    onload="startup()"
+    ondragenter="javascript:event.returnValue=false"
+    ondragover="javascript:event.returnValue=false"
+    ondrop="dropShipment();">
+    <div id='titleDiv' name='titleDiv' style='width: 100%; height: 200px; font-size: 8pt;'>
+        Drag a folder here...
+    </div>
+    <div id='mainDiv' name='mainDiv' style='vertical-align: top; width: 130px; height: 45px; position: absolute; left: 0px; top: 200px; background-color: rgb(0,255,255)'>
+        <span
+            id="gadgetContent" 
+            style="font-family: Tahoma; font-size: 6pt;">
+        </span>
+    </div>
+</body>
+</html>
