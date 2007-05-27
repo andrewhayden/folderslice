@@ -28,16 +28,27 @@
  */
 
 // Version information:
-// Source: $ HeadURL $
-// Id: $ Id $
+// Source: $HeadURL$
+// Id: $Id$
 
 var pieColor1 = '#ffea3b';
 var pieColor2 = '#c43122';
 var sliceColor1 = '#0055ff';
 var sliceColor2 = '#000040';
+var pieCoordinateSize = 1000; // 1000x1000 should be plenty of resolution
 
 // Set to 'true' to turn on debugging.
 var PIE_DEBUG = false;
+
+/**
+ * Changes the size of the coordinate system used to create pies.
+ * Larger coordinate spaces make smoother interpolation possible at a cost
+ * in speed.
+ */
+function setPieCoordinateSpace(size)
+{
+    pieCoordinateSize = size;
+}
 
 /**
  * Changes the colors used to draw the pie gradient.
@@ -144,6 +155,13 @@ function makePieWithSlice(elementId, centerX, centerY, floatOffset, radius, slic
  */
 function makePieWithGap(elementId, centerX, centerY, radius, startAngle, angleWidth, pointsInFullCircle, color1, color2, fillAngle)
 {
+    var pixelCenterX = centerX;
+    var pixelCenterY = centerY;
+    var pixelRadius = radius;
+
+    centerX = pieCoordinateSize / 2;
+    centerY = pieCoordinateSize / 2;
+    radius = pieCoordinateSize / 2;
     var element = document.getElementById(elementId);
     var xPoints = new Array;
     var yPoints = new Array;
@@ -195,8 +213,8 @@ function makePieWithGap(elementId, centerX, centerY, radius, startAngle, angleWi
     var divY = element.style.pixelTop;
 
     var shapeHtml = "<v:shape";
-    shapeHtml += " style='position:absolute; top: " + (centerY) + "px; left: " + (centerX) + "px; width: " + (radius * 2) + "px; height: " + (radius * 2) + "px;'";
-    shapeHtml += "coordsize='" + (radius * 2) + "," + (radius * 2) + "' coordorigin='" + (centerX) + "," + (centerY) + "'";
+    shapeHtml += " style='position:absolute; top: " + (pixelCenterY) + "px; left: " + (pixelCenterX) + "px; width: " + (pixelRadius * 2) + "px; height: " + (pixelRadius * 2) + "px;'";
+    shapeHtml += "coordsize='" + pieCoordinateSize + "," + pieCoordinateSize + "' coordorigin='" + centerX + "," + centerY + "'";
     shapeHtml += ">";
     shapeHtml += "\n    <v:path v='" + path + "' />";
     shapeHtml += "\n    <v:fill type='gradient' color='" + color1 + "' color2='" + color2 + "' angle='" + fillAngle + "'/>";
