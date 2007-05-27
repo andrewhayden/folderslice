@@ -1,0 +1,22 @@
+<project name="folderslice" default="deploy">
+    <property environment="env" />
+    <property name="gadgethome" value="${env.USERPROFILE}/AppData/Local/Microsoft/Windows Sidebar/Gadgets" />
+
+    <target name="deploy" description="deploy the gadget by copying to your local gadgets directory">
+        <fail unless="env.USERPROFILE"
+            message="Please set the USERPROFILE environment variable correctly." />
+        <echo message="Deploying to: ${gadgethome}" />
+        <copy todir="${gadgethome}" verbose="true">
+            <fileset dir="." id="gadgetsrc">
+                <include name="folderslice.gadget/**.*"/>
+            </fileset>
+        </copy>
+        <echo message="Succeeded.  You can now add the gadget from the sidebar menu." />
+    </target>
+
+    <target name="undeploy" description="undeploy the gadget by deleting from your local gadgets directory">
+        <delete failonerror="false" includeemptydirs="true" verbose="true">
+            <fileset dir="${gadgethome}/folderslice.gadget" />
+        </delete>
+    </target>
+</project>
