@@ -2,6 +2,11 @@
 <head>
     <title>Folder Slice</title>
     <style>
+        *
+        {
+            font-family: sans-serif;
+        }
+        
         v\:*
         {
             behavior: url(#default#VML);
@@ -12,6 +17,8 @@
             margin: 0;
             width: 130px;
             height: 245px;
+            background: url("transparent.png") repeat;
+            color: rgb(255,255,255);
         }
 
         #gadgetContent
@@ -30,7 +37,21 @@
             height: 245px;
             position: absolute;
             z-index: -1;
+        }
+
+        td.bg
+        {
+            margin: 0px;
+            padding:0px;
             background-repeat: no-repeat;
+        }
+
+        img.bg
+        {
+            height: 100%;
+            width: 100%;
+            padding: 0px;
+            margin: 0px;
         }
     </style>
     <script src="pie.js" language="javascript" type="text/javascript"></script>
@@ -41,10 +62,26 @@
     ondragenter="javascript:event.returnValue=false"
     ondragover="javascript:event.returnValue=false"
     ondrop="dropShipment();">
-    <div id='titleDiv' name='titleDiv' style='width: 130px; height: 200px; font-size: 8pt;'>
-        Drag a folder here...
+    <table cellspacing=0 cellpadding=0 style='position: absolute; top: 0px; left: 0px; width: 130px; height: 245px; z-index: -1'>
+        <tr>
+            <td class='bg' style='width: 16px; height: 16px;'><img class='bg' src='box-nw.png'></td>
+            <td class='bg' style='width: auto; height: 16px;'><img class='bg' src='box-n.png'></td>
+            <td class='bg' style='width: 16px; height: 16px;'><img class='bg' src='box-ne.png'></td>
+        </tr>
+        <tr>
+            <td class='bg' style='width: 16px; height: auto;'><img class='bg' src='box-w.png'></td>
+            <td class='bg' style='width: auto; height: auto; background-image: url("box-interior.png"); background-repeat: repeat;'></td>
+            <td class='bg' style='width: 16px; height: auto;'><img class='bg' src='box-e.png'></td>
+        </tr>
+        <tr>
+            <td class='bg' style='width: 16px; height: 16px;'><img class='bg' src='box-sw.png'></td>
+            <td class='bg' style='width: auto; height: 16px;'><img class='bg' src='box-s.png'></td>
+            <td class='bg' style='width: 16px; height: 16px;'><img class='bg' src='box-se.png'></td>
+        </tr>
+    </table>
+    <div id='titleDiv' name='titleDiv' style='padding-top: 4px; padding-left: 8px; padding-bottom: 0px; padding-right: 8px; position: absolute; left: 0px; top: 0px; width: 130px; height: 200px; font-size: 8pt;'>
     </div>
-    <div id='mainDiv' style='width: 130px; height: 45px; position: absolute; left: 0px; top: 200px; background-color: rgb(0,255,255)'>
+    <div id='mainDiv' style='width: 130px; height: 45px; position: absolute; left: 0px; top: 200px;'>
     </div>
 </body>
 </html>
