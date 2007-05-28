@@ -5,6 +5,7 @@
         *
         {
             font-family: sans-serif;
+            font-size: 8pt;
         }
         
         v\:*
@@ -79,7 +80,18 @@
             <td class='bg' style='width: 16px; height: 16px;'><img class='bg' src='box-se.png'></td>
         </tr>
     </table>
-    <div id='titleDiv' name='titleDiv' style='padding-top: 4px; padding-left: 8px; padding-bottom: 0px; padding-right: 8px; position: absolute; left: 0px; top: 0px; width: 130px; height: 200px; font-size: 8pt;'>
+    <div id='textDiv' name='titleDiv' style='padding-top: 4px; padding-left: 8px; padding-bottom: 0px; padding-right: 8px; position: absolute; left: 0px; top: 0px; width: 130px; height: 200px;'>
+        <span class='label' id='folderLabel'><!-- Folder:--></span>
+        <span class='value' id='folderValue'></span>
+        <br>
+        <span class='label' id='sizeLabel'>Size:</span>
+        <span class='value' id='sizeValue'></span>
+        <br>
+        <span class='label' id='filesLabel'>Files:</span>
+        <span class='value' id='filesValue'></span>
+        <br>
+        <span class='label' id='percentLabel'>Usage:</span>
+        <span class='value' id='percentValue'></span>
     </div>
     <div id='mainDiv' style='width: 130px; height: 45px; position: absolute; left: 0px; top: 200px;'>
     </div>

@@ -15,7 +15,7 @@ var DEBUG = false;
 
 function startup()
 {
-    setText(defaultMessage);
+    clearText();
 }
 
 function dropShipment()
@@ -52,7 +52,6 @@ function runloopDebug()
 function runloop()
 {
     var mainDiv = null;
-    var titleDiv;
     var centerX;
     var centerY;
     var fullWidth;
@@ -65,7 +64,6 @@ function runloop()
     var sliceOffset;
 
     mainDiv = document.getElementById("mainDiv");
-    titleDiv = document.getElementById("titleDiv");
     fullWidth = mainDiv.style.pixelWidth;
     fullHeight = mainDiv.style.pixelHeight;
     centerX = fullWidth / 2;
@@ -97,12 +95,12 @@ function runloop()
 
     if (!target.isFolder)
     {
-        setText(defaultMessage);
+        clearText();
         return;
     }
     else
     {
-        setText("Processing...");
+        setFolderValue("Processing...");
     }
 
     if (DEBUG) debug("\n" + archiveExtensions.length + " known extensions");
@@ -121,18 +119,10 @@ function runloop()
     var formattedPercent = (percentUsedSpaceUsedByFolder * 100).toFixed(1);
     var formattedSize = formatSizeNice(targetSizeBytes);
 
-    var text = "Folder '" + target.name + "':"
-        + "\nSize: " + formattedSize + " (" + numVisited + " files)"
-        + "\n" + (formattedPercent < 10 ? "0" : "") + formattedPercent + "% of used space";
-
-    if (!DEBUG)
-    {
-        setText(text);
-    }
-    else
-    {
-        debug(text);
-    }
+    setFolderValue(target.name.length > 15 ? target.name.substr(0,15) + "..." : target.name);
+    setSizeValue(formattedSize);
+    setFilesValue(numVisited);
+    setPercentOfUsedSpaceValue((formattedPercent < 10 ? "0" : "") + formattedPercent + "% of used");
 
     makePieWithSlice("mainDiv", pieX, pieY, sliceOffset, pieRadius,
         percentUsedSpaceUsedByFolder * 360, 100);
@@ -238,12 +228,42 @@ function tallyFolderSize(folder)
     return sizeBytes;
 }
 
+/*
 function setText(text)
 {
-    titleDiv.innerText = text;
+    textDiv.innerText = text;
 }
+*/
 
 function debug(text)
 {
-    titleDiv.innerText += text;
+    textDiv.innerText += text;
+}
+
+function clearText()
+{
+    setFolderValue(defaultMessage);
+    setSizeValue("");
+    setFilesValue("");
+    setPercentOfUsedSpaceValue("");
+}
+
+function setFolderValue(text)
+{
+    document.getElementById('folderValue').innerText = text;
+}
+
+function setSizeValue(text)
+{
+    document.getElementById('sizeValue').innerText = text;
+}
+
+function setFilesValue(text)
+{
+    document.getElementById('filesValue').innerText = text;
+}
+
+function setPercentOfUsedSpaceValue(text)
+{
+    document.getElementById('percentValue').innerText = text;
 }
