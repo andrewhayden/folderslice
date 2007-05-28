@@ -15,6 +15,7 @@ var DEBUG = false;
 
 function startup()
 {
+    setText(defaultMessage);
 }
 
 function dropShipment()
@@ -110,25 +111,31 @@ function runloop()
     visited = null;
     visited = new Array;
 
+    var driveLetter = target.path.charAt(0).toUpperCase();
+    var drive = System.Shell.drive(driveLetter);
+    var totalSizeMB = drive.totalSize;
+    var freeSpaceMB = drive.freeSpace;
+    var usedSpaceMB = totalSizeMB - freeSpaceMB;
+
+    var percentUsedSpaceUsedByFolder = targetSizeBytes / (usedSpaceMB * 1024 * 1024);
+    var formattedPercent = (percentUsedSpaceUsedByFolder * 100).toFixed(1);
     var formattedSize = formatSizeNice(targetSizeBytes);
+
+    var text = "Folder '" + target.name + "':"
+        + "\nSize: " + formattedSize + " (" + numVisited + " files)"
+        + "\n" + (formattedPercent < 10 ? "0" : "") + formattedPercent + "% of used space";
 
     if (!DEBUG)
     {
-        setText(
-            "Folder '" + target.name + "':"
-            + "\nSize: " + formattedSize + " (" + numVisited + " files)");
+        setText(text);
     }
     else
     {
-        debug(
-            "Folder '" + target.name + "':"
-            + "\nSize: " + formattedSize + " (" + numVisited + " files)");
+        debug(text);
     }
 
-    debug("\ndiv at " + mainDiv.style.pixelLeft + "," + mainDiv.style.pixelTop + ", size=" + fullWidth + "x" + fullHeight);
-    debug("\npie at " + pieX + "," + pieY + "; radius=" + pieRadius);
-
-    makePieWithSlice("mainDiv", pieX, pieY, sliceOffset, pieRadius, 50, 100);
+    makePieWithSlice("mainDiv", pieX, pieY, sliceOffset, pieRadius,
+        percentUsedSpaceUsedByFolder * 360, 100);
 }
 
 function formatSizeNice(bytes)
@@ -149,7 +156,7 @@ function formatSizeNice(bytes)
     }
 
     var result = bytes / (nextUnitLowerBound / 1024);
-    return (result.toFixed(3) + " " + unit);
+    return (result.toFixed(2) + " " + unit);
 }
 
 // 'folder' must be of type 'System.Shell.Item' and must be a directory.
