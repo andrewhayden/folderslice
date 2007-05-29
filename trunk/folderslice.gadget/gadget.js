@@ -8,26 +8,46 @@ var archiveExtensions = [
 
 // If we get beyond yottabytes (10^24) while using JavaScript, the future is bleak indeed.
 var sizeUnits = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-
-var visited = new Array;
-var numVisited = 0;
+var gadgetState = new Object;
 var DEBUG = false;
+
+function cancel()
+{
+    if (gadgetState.timerId != 0)
+    {
+        gadgetState.invocationCounter++;
+        clearTimeout(gadgetState.timerId);
+        gadgetState.timerId = 0;
+    }
+}
 
 function startup()
 {
     clearText();
+    gadgetState.visited = new Array;
+    gadgetState.numVisited = 0;
+    gadgetState.target = null;
+    gadgetState.timerId = 0;
+    gadgetState.invocationCounter = 0;
+    gadgetState.maxFilesPerInterval = 100;
+    gadgetState.restIntervalMillis = 25;
+    gadgetState.tallySizeBytes = 0;
+    gadgetState.tallyStack = new Array(0);
+    gadgetState.numFiles = 0;
+    gadgetState.numFolders = 0;
+
+    if (DEBUG)
+    {
+        document.getElementById("debugDiv").style.display="block";
+        debug("Debug ENABLED");
+    }
 }
 
 function dropShipment()
 {
-    runloopDebug();
-}
-
-function runloopDebug()
-{
     try
     {
-        runloop();
+        kickOff();
     }
     catch(error)
     {
@@ -49,39 +69,37 @@ function runloopDebug()
     }
 }
 
-function runloop()
+function runloopDebug(invocationCounter)
 {
-    var mainDiv = null;
-    var centerX;
-    var centerY;
-    var fullWidth;
-    var fullHeight;
-    var pieX;
-    var pieY;
-    var pieWidth;
-    var pieHeight;
-    var pieRadius;
-    var sliceOffset;
-
-    mainDiv = document.getElementById("mainDiv");
-    fullWidth = mainDiv.style.pixelWidth;
-    fullHeight = mainDiv.style.pixelHeight;
-    centerX = fullWidth / 2;
-    centerY = fullHeight / 2;
-
-    var smallestDimension = fullHeight;
-    if (fullHeight > fullWidth)
+    try
     {
-        smallestDimension = fullWidth;
+        tallyHelper(invocationCounter);
     }
+    catch(error)
+    {
+        var errorText = error.name + ": " + error;
+        if (error.message)
+        {
+            errorText += ": " + error.message;
+        }
+        else if (error.cause)
+        {
+            errorText += ": " + error.cause;
+        }
+        else if (error.description)
+        {
+            errorText += ": " + error.description;
+        }
 
-    pieWidth = smallestDimension;
-    pieHeight = pieWidth;
-    sliceOffset = 3;
-    pieRadius = (smallestDimension / 2) - sliceOffset;
-    pieX = centerX;
-    pieY = centerY;
+        mainDiv.innerText =  errorText;
+    }
+}
 
+/**
+ * Starts the tallying process. 
+ */
+function kickOff()
+{
     var droppedItem = System.Shell.itemFromFileDrop(event.dataTransfer, 0);
     var target;
     if (droppedItem.isLink)
@@ -95,7 +113,7 @@ function runloop()
 
     if (!target.isFolder)
     {
-        clearText();
+        clearText(); // nothing to do
         return;
     }
     else
@@ -103,13 +121,58 @@ function runloop()
         setFolderValue("Processing...");
     }
 
-    if (DEBUG) debug("\n" + archiveExtensions.length + " known extensions");
-    numVisited = 0;
-    var targetSizeBytes = tallyFolderSize(target);
-    visited = null;
-    visited = new Array;
+    gadgetState.visited = new Array(0);
+    gadgetState.numVisited = 0;
+    gadgetState.timerId = 0;
+    gadgetState.tallySizeBytes = 0;
+    gadgetState.tallyStack = new Array(0);
+    gadgetState.numFiles = 0;
+    gadgetState.numFolders = 0;
 
-    var driveLetter = target.path.charAt(0).toUpperCase();
+    gadgetState.invocationCounter++;
+    gadgetState.target = target;
+    
+    var tallyState = new Object;
+    tallyState.bootstrap = true;
+    tallyState.target = target;
+    gadgetState.tallyStack.push(tallyState);
+    if (DEBUG)
+    {
+        document.getElementById("debugDiv").innerText = "";
+        gadgetState.timerId = setTimeout('runloopDebug(' + gadgetState.invocationCounter + ')', 1);
+    }
+    else
+    {
+        gadgetState.timerId = setTimeout('tallyHelper(' + gadgetState.invocationCounter + ')', 1);
+    }
+}
+
+/**
+ * Completes the process, rendering information and graphics.
+ */ 
+function finishUp()
+{
+    var mainDiv = document.getElementById("mainDiv");
+    var fullWidth = mainDiv.style.pixelWidth;
+    var fullHeight = mainDiv.style.pixelHeight;
+    var centerX = fullWidth / 2;
+    var centerY = fullHeight / 2;
+    var smallestDimension = fullHeight;
+    if (fullHeight > fullWidth)
+    {
+        smallestDimension = fullWidth;
+    }
+
+    var pieWidth = smallestDimension;
+    var pieHeight = pieWidth;
+    var sliceOffset = 3;
+    var pieRadius = (smallestDimension / 2) - sliceOffset;
+    var pieX = centerX;
+    var pieY = centerY;
+
+    var targetSizeBytes = gadgetState.tallySizeBytes;
+
+    var driveLetter = gadgetState.target.path.charAt(0).toUpperCase();
     var drive = System.Shell.drive(driveLetter);
     var totalSizeMB = drive.totalSize;
     var freeSpaceMB = drive.freeSpace;
@@ -119,14 +182,22 @@ function runloop()
     var formattedPercent = (percentUsedSpaceUsedByFolder * 100).toFixed(1);
     var formattedSize = formatSizeNice(targetSizeBytes);
 
-    setFolderValue(target.name.length > 15 ? target.name.substr(0,15) + "..." : target.name);
+    setFolderValue(gadgetState.target.name.length > 15 ?
+        (gadgetState.target.name.substr(0,15) + "...") : gadgetState.target.name);
     setSizeValue(formattedSize);
-    setFilesValue(numVisited);
+    setFilesValue(gadgetState.numFiles);
     setPercentOfUsedSpaceValue((formattedPercent < 10 ? "0" : "") + formattedPercent + "% of used");
 
     makePieWithSlice("mainDiv", pieX, pieY, sliceOffset, pieRadius,
         percentUsedSpaceUsedByFolder * 360, 100);
+
+    // Clean up right away to avoid holding onto memory we don't need
+    gadgetState.visited = null;
+    gadgetState.visited = new Array;
+    gadgetState.numVisited = 0;
+    gadgetState.target = null;
 }
+
 
 function formatSizeNice(bytes)
 {
@@ -149,95 +220,183 @@ function formatSizeNice(bytes)
     return (result.toFixed(2) + " " + unit);
 }
 
-// 'folder' must be of type 'System.Shell.Item' and must be a directory.
-function tallyFolderSize(folder)
+function tallyHelper(invocationCounter)
 {
-    var contents = folder.SHFolder.Items;
-    var numEntries = contents.count;
+    while(tallyFolderSize(invocationCounter))
+    {
+        // Yay.
+    }
+}
+
+/**
+ * Invoked on the timer.
+ * Accumulates data in gadgetState.
+ */
+function tallyFolderSize(invocationCounter)
+{
+    // Check if we are executing the user's latest request.
+    if (invocationCounter != gadgetState.invocationCounter)
+    {
+        // We are behind the times.  We've been canceled!
+        return false;
+    }
+
+    // If we aren't behind the times, see if there is work to be done.
+    if (gadgetState.tallyStack.length == 0)
+    {
+        // No work to be done.  We are finished!
+        finishUp();
+        return false;
+    }
+
+    // Otherwise, there is work to be done.
+    var tallyState = gadgetState.tallyStack.pop();
+
+    if (tallyState.bootstrap)
+    {
+        // First time for this folder.
+        tallyState.contents = tallyState.target.SHFolder.Items;
+        tallyState.numEntries = tallyState.contents.count;
+        tallyState.index = 0;
+        tallyState.bootstrap = false;
+    }
+
     var entry;
     var resolvedEntry;
     var sizeBytes = 0;
-    for (var index=0; index<numEntries; index++)
+    var numLoops = 0;
+    for (; tallyState.index<tallyState.numEntries; tallyState.index++)
     {
+        if (gadgetState.numVisited > 0 && numLoops > 0
+            && (gadgetState.numVisited % gadgetState.maxFilesPerInterval) == 0)
+        {
+            // We need to rest for a while to let the system have some time.
+            // Push our current state onto the stack...
+            // (Note: Technically, it is possible to force the state machine
+            // into a worst-case scenario by nesting folders with exactly one
+            // entry each; in this case, this method will never stop to rest,
+            // so to speak, and may appear unresponsive until it reaches the
+            // end of the tree of such directories.  This will not happen
+            // with any great frequency in reality, and the program will still
+            // function in a degraded mode if it does.)
+            gadgetState.tallyStack.push(tallyState);
+            setFolderValue("... " + gadgetState.numVisited + " files...");
+
+            // Set the timeout to come back here in a little while...
+            if (DEBUG)
+            {
+                debug("\nresting for " + gadgetState.restIntervalMillis + "ms");
+                gadgetState.timerId = setTimeout('runloopDebug(' + invocationCounter + ')', gadgetState.restIntervalMillis);
+            }
+            else
+            {
+                gadgetState.timerId = setTimeout('tallyHelper(' + invocationCounter + ')', gadgetState.restIntervalMillis);
+            }
+
+            // And finally, halt execution of this method.
+            return false;
+        }
+
+        // If we get this far we have a valid state and are still on-track.
+        numLoops++;
+
         // Iterate over the list of System.Shell.Item objects in the directory
-        entry = contents.item(index);
+        entry = tallyState.contents.item(tallyState.index);
+        var ok = true;
 
         if (!entry || !entry.path)
         {
             // Weird.  Don't know how to process these.
-            return 0;
+            ok = false;
         }
-        else if (visited[entry.path])
+        else if (gadgetState.visited[entry.path])
         {
             // Somehow ended up in a circular loop.  Stop!!!
             if (DEBUG) debug("\nbroke out of loop");
-            return 0;
+            ok = false;
         }
         else
         {
-            visited[entry.path] = true;
-            numVisited++;
+            gadgetState.visited[entry.path] = true;
+            gadgetState.numVisited++;
         }
 
-        // "System.Shell.Item.isFile" is currently broken (26 May 2007)
-        if (entry.isLink)
+        if (ok)
         {
-            // Ignore links.
-        }
-        else if (entry.isFolder)
-        {
-            // A directory, or a file.  Note that ZIP files are considered
-            // directories.
-            // If this is an archive file, its size is it's compressed size,
-            // not the size of its contents (we do not want to open the zip
-            // files.  We really, really don't want to.
-            var path = entry.path.toString();
-            var lastDot = path.lastIndexOf(".");
-            var isArchive = false;
-            if (lastDot >= 0 && lastDot < path.length - 1)
+            // "System.Shell.Item.isFile" is currently broken (26 May 2007)
+            if (entry.isLink)
             {
-                var extension = path.substring(lastDot + 1).toLowerCase();
-                for (var extensionIndex = 0; extensionIndex < archiveExtensions.length; extensionIndex++)
-                {
-                    if (archiveExtensions[extensionIndex] == extension)
-                    {
-                        isArchive = true;
-                    }
-                }
+                // Ignore links.
             }
-
-            if (!isArchive)
+            else if (entry.isFolder)
             {
-                if (DEBUG) debug("\nfolder:" + path);
-                sizeBytes += tallyFolderSize(entry);
+                // A directory, or a file.  Note that ZIP files are considered
+                // directories.
+                // If this is an archive file, its size is it's compressed size,
+                // not the size of its contents (we do not want to open the zip
+                // files.  We really, really don't want to.
+                var path = entry.path.toString();
+                var archive = isArchive(path);
+    
+                if (!archive)
+                {
+                    // Regular folder
+                    // if (DEBUG) debug("\nfolder:" + path);
+                    // Recurse.
+                    var newState = new Object;
+                    newState.bootstrap = true;
+                    newState.target = entry;
+                    // Push new state onto the stack...
+                    gadgetState.tallyStack.push(newState);
+                }
+                else
+                {
+                    // Archive folder
+                    gadgetState.tallySizeBytes += entry.size;
+                    // if (DEBUG) debug("\narchive:" + path);
+                }
             }
             else
             {
-                sizeBytes += entry.size;
-                if (DEBUG) debug("\narchive:" + entry + "(" + entry.size + ")");
+                // Not a directory, not a link.
+                // Must be a file!
+                gadgetState.tallySizeBytes += entry.size;
+                // if (DEBUG) debug("\nfile:" + entry.path);
             }
         }
-        else
-        {
-            // Not a directory, not a link.
-            // Must be a file!
-            sizeBytes += entry.size;
-            if (DEBUG) debug("\nfile:" + entry.path + "(" + entry.size + ")");
-        }
     }
-    return sizeBytes;
+
+    // If we get here, we have not set the timer to call us back.
+    // This means we have either finished, or we have just added things to the
+    // stack but haven't yet hit the limit of resources we can examine in this
+    // interval.
+    // Return true; the helper will invoke us again immediately.
+    return true;
 }
 
-/*
-function setText(text)
+/**
+ * Returns true if the file is an archive; otherwise, returns false.
+ */
+function isArchive(path)
 {
-    textDiv.innerText = text;
+    var lastDot = path.lastIndexOf(".");
+    if (lastDot >= 0 && lastDot < path.length - 1)
+    {
+        var extension = path.substring(lastDot + 1).toLowerCase();
+        for (var extensionIndex = 0; extensionIndex < archiveExtensions.length; extensionIndex++)
+        {
+            if (archiveExtensions[extensionIndex] == extension)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
 }
-*/
 
 function debug(text)
 {
-    textDiv.innerText += text;
+    document.getElementById("debugDiv").innerText += text;
 }
 
 function clearText()
@@ -250,7 +409,7 @@ function clearText()
 
 function setFolderValue(text)
 {
-    document.getElementById('folderValue').innerText = text;
+    document.getElementById("folderValue").innerText = text;
 }
 
 function setSizeValue(text)
