@@ -18,7 +18,27 @@ function cancel()
         gadgetState.invocationCounter++;
         clearTimeout(gadgetState.timerId);
         gadgetState.timerId = 0;
+        clearText();
+        progressIndicatorOff();
     }
+}
+
+function progressIndicatorOn()
+{
+    var element = document.getElementById("progressIndicator");
+    element.style.visibility = "visible";
+    element.style.width=element.oldWidth;
+    element.style.height=element.oldHeight;
+}
+
+function progressIndicatorOff()
+{
+    var element = document.getElementById("progressIndicator");
+    element.oldWidth = element.style.width;
+    element.oldHeight = element.style.height;
+    element.style.visibility = "hidden";
+    element.style.width="0px";
+    element.style.height="0px";
 }
 
 function startup()
@@ -36,6 +56,7 @@ function startup()
     gadgetState.numFiles = 0;
     gadgetState.numFolders = 0;
 
+    progressIndicatorOff();
     if (DEBUG)
     {
         document.getElementById("debugDiv").style.display="block";
@@ -118,7 +139,9 @@ function kickOff()
     }
     else
     {
+        clearText();
         setFolderValue("Processing...");
+        progressIndicatorOn();
     }
 
     gadgetState.visited = new Array(0);
@@ -182,6 +205,7 @@ function finishUp()
     var formattedPercent = (percentUsedSpaceUsedByFolder * 100).toFixed(1);
     var formattedSize = formatSizeNice(targetSizeBytes);
 
+    progressIndicatorOff();
     setFolderValue(gadgetState.target.name.length > 15 ?
         (gadgetState.target.name.substr(0,15) + "...") : gadgetState.target.name);
     setSizeValue(formattedSize);
@@ -280,7 +304,7 @@ function tallyFolderSize(invocationCounter)
             // with any great frequency in reality, and the program will still
             // function in a degraded mode if it does.)
             gadgetState.tallyStack.push(tallyState);
-            setFolderValue("... " + gadgetState.numVisited + " files...");
+            setFolderValue(gadgetState.numVisited + " files");
 
             // Set the timeout to come back here in a little while...
             if (DEBUG)

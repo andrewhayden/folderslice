@@ -246,7 +246,7 @@ function sinDegrees(degrees)
  */
 function toRadians(degrees)
 {
-    return ((Math.PI * 2) * (degrees / 360)) % 360;
+    return ((Math.PI * 2) * ((degrees % 360) / 360));
 }
 
 /**
