@@ -80,7 +80,8 @@
             <td class='bg' style='width: 16px; height: 16px;'><img class='bg' src='box-se.png'></td>
         </tr>
     </table>
-    <div id='textDiv' name='titleDiv' style='padding-top: 4px; padding-left: 8px; padding-bottom: 0px; padding-right: 8px; position: absolute; left: 0px; top: 0px; width: 130px; height: 200px;'>
+    <div id='textDiv' style='padding-top: 4px; padding-left: 8px; padding-bottom: 0px; padding-right: 8px; position: absolute; left: 0px; top: 0px; width: 130px; height: 200px;'>
+        <button onclick='cancel()'>~</button>
         <span class='label' id='folderLabel'><!-- Folder:--></span>
         <span class='value' id='folderValue'></span>
         <br>
@@ -92,6 +93,8 @@
         <br>
         <span class='label' id='percentLabel'>Usage:</span>
         <span class='value' id='percentValue'></span>
+    </div>
+    <div id='debugDiv' style='white-space: nowrap; display: none; overflow: scroll; background-color: rgb(0,0,0); color: red; z-index: 100; position: absolute; left: 0px; top: 75px; width: 130px; height: 125px;'>
     </div>
     <div id='mainDiv' style='width: 130px; height: 45px; position: absolute; left: 0px; top: 200px;'>
     </div>
