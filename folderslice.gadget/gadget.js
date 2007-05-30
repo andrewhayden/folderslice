@@ -9,7 +9,7 @@ var archiveExtensions = [
 // If we get beyond yottabytes (10^24) while using JavaScript, the future is bleak indeed.
 var sizeUnits = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 var gadgetState = new Object;
-var DEBUG = true;
+var DEBUG = false;
 
 function cancel()
 {
@@ -56,6 +56,10 @@ function startup()
     gadgetState.numFiles = 0;
     gadgetState.numFolders = 0;
 
+    setPieColors("#a0a0a0", "#333333");
+    setSliceColors(0, "#ff0000", "#400000");
+    setSliceColors(1, "#00ff00", "#004000");
+    setSliceColors(2, "#0000ff", "#000040");
     progressIndicatorOff();
     if (DEBUG)
     {
@@ -218,17 +222,28 @@ function finishUp()
 
     var sliceSizes = new Array;
     sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
+    setSliceColors(0, "#ffffff", "#a0a0a0");
     makePieWithSlices("mainDiv", pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100);
 
+    var sortedChildren = getEntriesDecreasingOrder(gadgetState.target.path);
     if (DEBUG)
     {
-        var sortedChildren = getEntriesDecreasingOrder(gadgetState.target.path);
         for (var x=0; x<sortedChildren.length; x++)
         {
             debug("\n#" + x + ": " + sortedChildren[x].path + ": " + sortedChildren[x].size);
         }
     }
+
+    sliceSizes = new Array;
+    for (var x=0; x<sortedChildren.length && x<3; x++)
+    {
+        var percentSpaceFromParent = sortedChildren[x].size / targetSizeBytes;
+        sliceSizes[x] = percentSpaceFromParent * 360;
+    }
+    setSliceColors(0, "#ff0000", "#400000");
+    makePieWithSlices("childrenDiv", pieX, pieY, sliceOffset, pieRadius,
+        sliceSizes, 100);
 
     // Clean up right away to avoid holding onto memory we don't need
     gadgetState.visited = null;
