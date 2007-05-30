@@ -31,14 +31,15 @@
 // Source: $HeadURL$
 // Id: $Id$
 
-var pieColor1 = '#ffea3b';
-var pieColor2 = '#c43122';
-var sliceColor1 = '#0055ff';
-var sliceColor2 = '#000040';
-var pieCoordinateSize = 1000; // 1000x1000 should be plenty of resolution
-
-// Set to 'true' to turn on debugging.
-var PIE_DEBUG = false;
+var pieGlobals = new Object;
+pieGlobals.pieColor1 = '#ffea3b';
+pieGlobals.pieColor2 = '#c43122';
+pieGlobals.sliceColors = new Array;
+pieGlobals.sliceColors[0] = new Object;
+pieGlobals.sliceColors[0].color1 = '#0055ff';
+pieGlobals.sliceColors[0].color2 = '#000040';
+pieGlobals.pieCoordinateSize = 1000;
+pieGlobals.pieDebug = false; // Set to 'true' to turn on debugging.
 
 /**
  * Changes the size of the coordinate system used to create pies.
@@ -47,7 +48,7 @@ var PIE_DEBUG = false;
  */
 function setPieCoordinateSpace(size)
 {
-    pieCoordinateSize = size;
+    pieGlobals.pieCoordinateSize = size;
 }
 
 /**
@@ -55,21 +56,25 @@ function setPieCoordinateSpace(size)
  */
 function setPieColors(c1, c2)
 {
-    pieColor1 = c1;
-    pieColor2 = c2;
+    pieGlobals.pieColor1 = c1;
+    pieGlobals.pieColor2 = c2;
 }
 
 /**
  * Changes the colors used to draw the slice gradient.
+ * @param sliceIndex the index of the slice whose color should be set
+ * @param c1 color #1
+ * @param c2 color #2
  */
-function setSliceColors(c1, c2)
+function setSliceColors(sliceIndex, c1, c2)
 {
-    sliceColor1 = c1;
-    sliceColor2 = c2;
+    pieGlobals.sliceColors[sliceIndex] = new Object;
+    pieGlobals.sliceColors[sliceIndex].color1 = c1;
+    pieGlobals.sliceColors[sliceIndex].color2 = c2;
 }
 
 /**
- * Makes a pie with a single floating slice.
+ * Makes a pie with any number of floating slices.
  *
  * @param elementId     the ID of the container element in which to draw.
  *                      IMPORTANT: the element's contents are DISCARDED
@@ -91,8 +96,9 @@ function setSliceColors(c1, c2)
  *                      be padded on all sides with the floatOffset specified
  *                      above, since the wedge might jut out in any direction
  *                      by that many pixels.
- * @param sliceSize     the size of the slize, in degrees, to take out of the
- *                      pie; the code will attempt to draw any non-zero size,
+ * @param sliceSizes    array containing the sizes of the slices, in degrees,
+ *                      to take out of the pie;
+ *                      the code will attempt to draw any non-zero size,
  *                      so it is up to the caller to zero the slice size if it
  *                      is too small to reasonably be shown.
  * @param pointsInFullCircle
@@ -101,35 +107,58 @@ function setSliceColors(c1, c2)
  *                      circumference of the circle.  Large values make the
  *                      drawing smoother at a cost in performance.
  */
-function makePieWithSlice(elementId, centerX, centerY, floatOffset, radius, sliceSize, pointsInFullCircle)
+function makePieWithSlices(elementId, centerX, centerY, floatOffset, radius, sliceSizes, pointsInFullCircle)
 {
     // Clear old contents...
     document.getElementById(elementId).innerHTML = "";
 
-    var rotation = 90;
-    var pieStartAngle = 0 + rotation;
-    var pieAngleWidth = 360 - sliceSize;
-    makePieWithGap(elementId, centerX, centerY, radius, pieStartAngle, pieAngleWidth, pointsInFullCircle, pieColor1, pieColor2, 180);
-
-    if (sliceSize != 0)
+    // Tally slice sizing information
+    var totalSliceSize = 0;
+    for (var x=0; x<sliceSizes.length; x++)
     {
-        // Offset must be scaled in x/y according to sin/cos of the angle...
-        var sliceStartAngle = 360 - sliceSize + rotation;
-        var sliceCenter = sliceStartAngle + (sliceSize / 2);
-        var xScale = cosDegrees(sliceCenter);
-        var yScale = sinDegrees(sliceCenter);
-        var offsetX = xScale * floatOffset;
-        var offsetY = yScale * floatOffset;
-        makePieWithGap(elementId,
-            Math.round(centerX + offsetX),
-            Math.round(centerY - offsetY),
-            radius, sliceStartAngle, sliceSize, pointsInFullCircle,
-            sliceColor1, sliceColor2, 180 - sliceCenter);
+        totalSliceSize += sliceSizes[x];
+    }
+
+    var rotation = 90;
+    var pieStartAngle = rotation;
+    var pieAngleWidth = 360 - totalSliceSize;
+    if (pieAngleWidth > 0)
+    {
+        makeSlice(elementId, centerX, centerY, radius,
+            pieStartAngle, pieAngleWidth, pointsInFullCircle,
+            pieGlobals.pieColor1, pieGlobals.pieColor2, 180);
+    }
+
+    var sliceSizeDone = 0;
+    for (var index=0; index<sliceSizes.length; index++)
+    {
+        var sliceSize = sliceSizes[index];
+        if (sliceSize != 0)
+        {
+            // Offset must be scaled in x/y according to sin/cos of the angle...
+            var sliceStartAngle = 360 - totalSliceSize + rotation + sliceSizeDone;
+            var sliceCenter = sliceStartAngle + (sliceSize / 2);
+            var xScale = cosDegrees(sliceCenter);
+            var yScale = sinDegrees(sliceCenter);
+            var offsetX = xScale * floatOffset;
+            var offsetY = yScale * floatOffset;
+            var color1;
+            var color2;
+            var color1 = pieGlobals.sliceColors[index % pieGlobals.sliceColors.length].color1;
+            var color2 = pieGlobals.sliceColors[index % pieGlobals.sliceColors.length].color2;
+
+            makeSlice(elementId,
+                Math.round(centerX + offsetX),
+                Math.round(centerY - offsetY),
+                radius, sliceStartAngle, sliceSize, pointsInFullCircle,
+                color1, color2, 180 - sliceCenter);
+            sliceSizeDone += sliceSize;
+        }
     }
 }
 
 /**
- * Adds a pie section to the specified element.
+ * Adds a slice section to the specified element.
  *
  * @param elementId     the ID of the container element in which to draw.
  * @param centerX       the location, relative to the top-left corner of the
@@ -153,15 +182,15 @@ function makePieWithSlice(elementId, centerX, centerY, floatOffset, radius, slic
  * @param color2        the second color for the gradient
  * @param fillAngle     the angle through which the gradient is rotated
  */
-function makePieWithGap(elementId, centerX, centerY, radius, startAngle, angleWidth, pointsInFullCircle, color1, color2, fillAngle)
+function makeSlice(elementId, centerX, centerY, radius, startAngle, angleWidth, pointsInFullCircle, color1, color2, fillAngle)
 {
     var pixelCenterX = centerX;
     var pixelCenterY = centerY;
     var pixelRadius = radius;
 
-    centerX = pieCoordinateSize / 2;
-    centerY = pieCoordinateSize / 2;
-    radius = pieCoordinateSize / 2;
+    centerX = pieGlobals.pieCoordinateSize / 2;
+    centerY = pieGlobals.pieCoordinateSize / 2;
+    radius = pieGlobals.pieCoordinateSize / 2;
     var element = document.getElementById(elementId);
     var xPoints = new Array;
     var yPoints = new Array;
@@ -187,7 +216,7 @@ function makePieWithGap(elementId, centerX, centerY, radius, startAngle, angleWi
     setPoint(xPoints, yPoints, numPoints++, centerX, centerY);
 
     // If debugging is enabled, show the user interesting information
-    if (PIE_DEBUG)
+    if (pieGlobals.pieDebug)
     {
         var xText = "";
         for (var index=0; index<numPoints; index++)
@@ -214,13 +243,13 @@ function makePieWithGap(elementId, centerX, centerY, radius, startAngle, angleWi
 
     var shapeHtml = "<v:shape";
     shapeHtml += " style='position:absolute; top: " + (pixelCenterY) + "px; left: " + (pixelCenterX) + "px; width: " + (pixelRadius * 2) + "px; height: " + (pixelRadius * 2) + "px;'";
-    shapeHtml += "coordsize='" + pieCoordinateSize + "," + pieCoordinateSize + "' coordorigin='" + centerX + "," + centerY + "'";
+    shapeHtml += "coordsize='" + pieGlobals.pieCoordinateSize + "," + pieGlobals.pieCoordinateSize + "' coordorigin='" + centerX + "," + centerY + "'";
     shapeHtml += ">";
     shapeHtml += "\n    <v:path v='" + path + "' />";
     shapeHtml += "\n    <v:fill type='gradient' color='" + color1 + "' color2='" + color2 + "' angle='" + fillAngle + "'/>";
     shapeHtml += "\n</v:shape>";
 
-    if (PIE_DEBUG) alert("shapehtml=" + shapeHtml + "\nDiv at: " + divX + ", " + divY);
+    if (pieGlobals.pieDebug) alert("shapehtml=" + shapeHtml + "\nDiv at: " + divX + ", " + divY);
 
     element.innerHTML+=shapeHtml;
 }

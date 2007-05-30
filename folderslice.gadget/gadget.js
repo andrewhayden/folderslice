@@ -189,7 +189,7 @@ function finishUp()
     var pieWidth = smallestDimension;
     var pieHeight = pieWidth;
     var sliceOffset = 3;
-    var pieRadius = (smallestDimension / 2) - sliceOffset;
+    var pieRadius = (smallestDimension / 2) - (sliceOffset * 2);
     var pieX = centerX;
     var pieY = centerY;
 
@@ -212,8 +212,10 @@ function finishUp()
     setFilesValue(gadgetState.numFiles);
     setPercentOfUsedSpaceValue((formattedPercent < 10 ? "0" : "") + formattedPercent + "% of used");
 
-    makePieWithSlice("mainDiv", pieX, pieY, sliceOffset, pieRadius,
-        percentUsedSpaceUsedByFolder * 360, 100);
+    var sliceSizes = new Array;
+    sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
+    makePieWithSlices("mainDiv", pieX, pieY, sliceOffset, pieRadius,
+        sliceSizes, 100);
 
     // Clean up right away to avoid holding onto memory we don't need
     gadgetState.visited = null;
