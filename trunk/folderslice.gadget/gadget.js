@@ -9,7 +9,7 @@ var archiveExtensions = [
 // If we get beyond yottabytes (10^24) while using JavaScript, the future is bleak indeed.
 var sizeUnits = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 var gadgetState = new Object;
-var DEBUG = false;
+var DEBUG = true;
 
 function cancel()
 {
@@ -154,7 +154,11 @@ function kickOff()
 
     gadgetState.invocationCounter++;
     gadgetState.target = target;
-    
+    gadgetState.visited[target.path] = new Object;
+    gadgetState.visited[target.path].size = 0;
+    gadgetState.visited[target.path].parent = null;
+    gadgetState.visited[target.path].numFiles = 0;
+
     var tallyState = new Object;
     tallyState.bootstrap = true;
     tallyState.target = target;
@@ -216,6 +220,15 @@ function finishUp()
     sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
     makePieWithSlices("mainDiv", pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100);
+
+    if (DEBUG)
+    {
+        var sortedChildren = getEntriesDecreasingOrder(gadgetState.target.path);
+        for (var x=0; x<sortedChildren.length; x++)
+        {
+            debug("\n#" + x + ": " + sortedChildren[x].path + ": " + sortedChildren[x].size);
+        }
+    }
 
     // Clean up right away to avoid holding onto memory we don't need
     gadgetState.visited = null;
@@ -343,7 +356,11 @@ function tallyFolderSize(invocationCounter)
         }
         else
         {
-            gadgetState.visited[entry.path] = true;
+            gadgetState.visited[entry.path] = new Object;
+            gadgetState.visited[entry.path].size = 0;
+            gadgetState.visited[entry.path].parent = tallyState.target;
+            gadgetState.visited[entry.path].numFiles = 0;
+            gadgetState.visited[entry.path].path = entry.path;
             gadgetState.numVisited++;
         }
 
@@ -374,11 +391,14 @@ function tallyFolderSize(invocationCounter)
                     newState.target = entry;
                     // Push new state onto the stack...
                     gadgetState.tallyStack.push(newState);
+                    gadgetState.numFolders++;
                 }
                 else
                 {
                     // Archive folder
                     gadgetState.tallySizeBytes += entry.size;
+                    gadgetState.numFiles++;
+                    addSizeRecursive(entry, entry.size);
                     // if (DEBUG) debug("\narchive:" + path);
                 }
             }
@@ -387,6 +407,8 @@ function tallyFolderSize(invocationCounter)
                 // Not a directory, not a link.
                 // Must be a file!
                 gadgetState.tallySizeBytes += entry.size;
+                gadgetState.numFiles++;
+                addSizeRecursive(entry, entry.size);
                 // if (DEBUG) debug("\nfile:" + entry.path);
             }
         }
@@ -398,6 +420,28 @@ function tallyFolderSize(invocationCounter)
     // interval.
     // Return true; the helper will invoke us again immediately.
     return true;
+}
+
+/**
+ * Adds size recursively to the target entry itself as well as all of its
+ * parents.
+ */
+function addSizeRecursive(entry, size)
+{
+    var target = entry.path;
+    while(true)
+    {
+        gadgetState.visited[target].size += size;
+        gadgetState.visited[target].numFiles++;
+        if (gadgetState.visited[target].parent)
+        {
+            target = gadgetState.visited[target].parent.path;
+        }
+        else
+        {
+            return;
+        }
+    }
 }
 
 /**
@@ -451,4 +495,35 @@ function setFilesValue(text)
 function setPercentOfUsedSpaceValue(text)
 {
     document.getElementById('percentValue').innerText = text;
+}
+
+/**
+ * Compares two entries in the visted[] hash based on size.
+ */
+function entryCompare(a,b)
+{
+    return a.size - b.size;
+}
+
+/**
+ * Returns an ordered listing of all children of the specified
+ * folder, sorted by decreasing size.
+ */
+function getEntriesDecreasingOrder(path)
+{
+    var mainEntry = System.Shell.itemFromPath(path);
+    var contents = mainEntry.SHFolder.Items;
+    var numEntries = contents.count;
+    var children = new Array(0);
+    for (var x=0; x<numEntries; x++)
+    {
+        var path = contents.item(x).path;
+        if (gadgetState.visited[path])
+        {
+            children.push(gadgetState.visited[path]);
+        }
+    }
+    children.sort(entryCompare);
+    children.reverse();
+    return children;
 }
