@@ -371,11 +371,6 @@ function tallyFolderSize(invocationCounter)
         }
         else
         {
-            gadgetState.visited[entry.path] = new Object;
-            gadgetState.visited[entry.path].size = 0;
-            gadgetState.visited[entry.path].parent = tallyState.target;
-            gadgetState.visited[entry.path].numFiles = 0;
-            gadgetState.visited[entry.path].path = entry.path;
             gadgetState.numVisited++;
         }
 
@@ -399,6 +394,12 @@ function tallyFolderSize(invocationCounter)
                 if (!archive)
                 {
                     // Regular folder
+                    gadgetState.visited[entry.path] = new Object;
+                    gadgetState.visited[entry.path].size = 0;
+                    gadgetState.visited[entry.path].parent = tallyState.target;
+                    gadgetState.visited[entry.path].numFiles = 0;
+                    gadgetState.visited[entry.path].path = entry.path;
+
                     // if (DEBUG) debug("\nfolder:" + path);
                     // Recurse.
                     var newState = new Object;
@@ -413,7 +414,7 @@ function tallyFolderSize(invocationCounter)
                     // Archive folder
                     gadgetState.tallySizeBytes += entry.size;
                     gadgetState.numFiles++;
-                    addSizeRecursive(entry, entry.size);
+                    addSizeRecursive(tallyState.target.path, entry.size);
                     // if (DEBUG) debug("\narchive:" + path);
                 }
             }
@@ -423,7 +424,7 @@ function tallyFolderSize(invocationCounter)
                 // Must be a file!
                 gadgetState.tallySizeBytes += entry.size;
                 gadgetState.numFiles++;
-                addSizeRecursive(entry, entry.size);
+                addSizeRecursive(tallyState.target.path, entry.size);
                 // if (DEBUG) debug("\nfile:" + entry.path);
             }
         }
@@ -441,9 +442,9 @@ function tallyFolderSize(invocationCounter)
  * Adds size recursively to the target entry itself as well as all of its
  * parents.
  */
-function addSizeRecursive(entry, size)
+function addSizeRecursive(parentPath, size)
 {
-    var target = entry.path;
+    var target = parentPath;
     while(true)
     {
         gadgetState.visited[target].size += size;
