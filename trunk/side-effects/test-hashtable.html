@@ -1,0 +1,207 @@
+<html>
+<head>
+<script src="../folderslice.gadget/hashtable.js" language="javascript" type="text/javascript"></script>
+<script language="javascript" type="text/javascript">
+
+var names = new Array;
+names.push("bob");
+names.push("tom");
+names.push("rob");
+names.push("hal");
+names.push("tim");
+names.push("joe");
+names.push("ralph");
+names.push("andrew");
+names.push("fred");
+names.push("tony");
+names.push("rick");
+names.push("raul");
+names.push("bill");
+names.push("jeff");
+names.push("robert");
+names.push("salvator");
+names.push("lorenzo");
+names.push("daniel");
+names.push("maria");
+names.push("dimi");
+names.push("stephane");
+names.push("denise");
+names.push("alfonso");
+names.push("joseph");
+names.push("alucard");
+names.push("mario");
+names.push("luigi");
+names.push("toadstool");
+names.push("peach");
+names.push("toad");
+names.push("donkey kong");
+names.push("krump");
+names.push("dodo");
+names.push("marionette");
+names.push("discus lord");
+names.push("chakram");
+names.push("crissaegrim");
+names.push("murasame");
+names.push("masamune");
+names.push("kane");
+names.push("cid");
+names.push("cecil");
+names.push("tellah");
+names.push("edward");
+names.push("rydia");
+names.push("sabin");
+names.push("edgar");
+names.push("terra");
+names.push("locke");
+names.push("kefka");
+names.push("cyan");
+names.push("gestahl");
+names.push("setzer");
+names.push("gau");
+names.push("celese");
+names.push("shadow");
+names.push("interceptor");
+names.push("mog");
+names.push("strago");
+names.push("relm");
+names.push("gogo");
+names.push("umaro");
+names.push("ultros"); // oh yeah!
+
+
+var values = new Array;
+var hashtable;
+var counter = 0;
+
+function go()
+{
+    println("Preparing data...");
+    for (var index=0; index < names.length; index++)
+    {
+        values[index] = index;
+    }
+
+    println("Ready with " + values.length + " key,value pairs...");
+    println("Adding data...");
+
+    hashtable = createHashtable(65536 * 16, .75);
+
+    for (var index=0; index < names.length; index++)
+    {
+        hashInternals_put(hashtable, names[index], values[index]);
+    }
+
+    println("Data added.  Hashtable size=" + hashInternals_size(hashtable));
+
+    var ok = true;
+    for (var index=0; index < names.length; index++)
+    {
+        var value = hashInternals_get(hashtable, names[index]);
+        if (value != values[index])
+        {
+            println("Hashtable failure for name " + names[index]
+                + "; value=" + value + ", but should be "
+                + values[index]);
+            ok = false; 
+        }
+    }
+
+    if (ok)
+    {
+        println("Retrieval test passed!");
+    }
+    else
+    {
+        println("Retrieval test FAILED.");
+        return;
+    }
+
+    println("Trying to add duplicates...");
+    for (var index=0; index < names.length; index++)
+    {
+        hashInternals_put(hashtable, names[index], values[index]);
+    }
+
+    var size = hashInternals_size(hashtable);
+    println("Done trying to add duplicates.  Hashtable size=" + size);
+
+    if (size == names.length)
+    {
+        println("Duplicate entries test passed!");
+    }
+    else
+    {
+        println("Duplicate entries test FAILED.");
+        return;
+    }
+    
+    // now mix it up a bit.
+    println("Adding lots of names...");
+    counter = size;
+    var maxSize = 50000;
+    setTimeout("addRandomNames(" + maxSize + ")", 0);
+}
+
+function step2()
+{
+    var size = hashInternals_size(hashtable);
+    println("Done adding lots of paris.  Hashtable size=" + size);
+}
+
+function addRandomNames(maxSize)
+{
+    for (; counter<maxSize; counter++)
+    {
+        var newKey = names[Math.floor(Math.random()*names.length)]
+            + names[Math.floor(Math.random()*names.length)]
+            + names[Math.floor(Math.random()*names.length)]
+            + names[Math.floor(Math.random()*names.length)]
+            + names[Math.floor(Math.random()*names.length)]
+            + names[Math.floor(Math.random()*names.length)]
+            + names[Math.floor(Math.random()*names.length)];
+        hashInternals_put(hashtable, newKey, 0);
+        if (counter % 500 == 0)
+        {
+            println(counter + " iterations...");
+            counter++;
+            if (hashInternals_size(hashtable) < maxSize)
+            {
+                setTimeout("addRandomNames(" + maxSize + ")", 100);
+                return;
+            }
+            else
+            {
+                // Done!
+                setTimeout("step2()", 0);
+                return;
+            }
+        }
+    }
+
+    // Done!
+    setTimeout("step2()", 0);
+    return;
+
+}
+
+function print(text)
+{
+    var newtext=document.createTextNode(text);
+    document.getElementById("display").appendChild(newtext) //append text to new div
+}
+
+function println(text)
+{
+    var newtext=document.createTextNode(text + "\n");
+    document.getElementById("display").appendChild(newtext) //append text to new div
+}
+
+</script>
+</head>
+<body>
+<button onclick='go()'>Go!</button>
+<br>
+<div id='display' style='width: 600px; height: 800px; border: 1px solid black; white-space: pre'>
+</div>
+</body>
+</html>
