@@ -19,4 +19,10 @@
             <fileset dir="${gadgethome}/folderslice.gadget" />
         </delete>
     </target>
+
+    <target name="package" description="build installable package">
+        <mkdir dir="releases"/>
+        <delete failonerror="false" file="releases/folderslice.gadget" />
+        <zip basedir="folderslice.gadget" destfile="releases/folderslize.gadget" />
+    </target>
 </project>
