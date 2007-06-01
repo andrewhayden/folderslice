@@ -18,7 +18,7 @@
             margin: 0;
             width: 130px;
             height: 245px;
-            background: url("transparent.png") repeat;
+            background: url("transparent.gif") repeat;
             color: rgb(255,255,255);
         }
 
@@ -54,6 +54,11 @@
             padding: 0px;
             margin: 0px;
         }
+
+        img
+        {
+            border: none;
+        }
     </style>
     <script src="pie.js" language="javascript" type="text/javascript"></script>
     <script src="gadget.js" language="javascript" type="text/javascript"></script>
@@ -63,42 +68,56 @@
     ondragenter="javascript:event.returnValue=false"
     ondragover="javascript:event.returnValue=false"
     ondrop="dropShipment();">
-    <table cellspacing=0 cellpadding=0 style='position: absolute; top: 0px; left: 0px; width: 130px; height: 245px; z-index: -1'>
-        <tr>
-            <td class='bg' style='width: 16px; height: 16px;'><img class='bg' src='box-nw.png'></td>
-            <td class='bg' style='width: auto; height: 16px;'><img class='bg' src='box-n.png'></td>
-            <td class='bg' style='width: 16px; height: 16px;'><img class='bg' src='box-ne.png'></td>
-        </tr>
-        <tr>
-            <td class='bg' style='width: 16px; height: auto;'><img class='bg' src='box-w.png'></td>
-            <td class='bg' style='width: auto; height: auto; background-image: url("box-interior.png"); background-repeat: repeat;'></td>
-            <td class='bg' style='width: 16px; height: auto;'><img class='bg' src='box-e.png'></td>
-        </tr>
-        <tr>
-            <td class='bg' style='width: 16px; height: 16px;'><img class='bg' src='box-sw.png'></td>
-            <td class='bg' style='width: auto; height: 16px;'><img class='bg' src='box-s.png'></td>
-            <td class='bg' style='width: 16px; height: 16px;'><img class='bg' src='box-se.png'></td>
-        </tr>
-    </table>
-    <div id='textDiv' style='padding-top: 4px; padding-left: 8px; padding-bottom: 0px; padding-right: 8px; position: absolute; left: 0px; top: 0px; width: 130px; height: 200px;'>
-        <button onclick='cancel()'>~</button>
-        <span class='label' id='folderLabel'><img id='progressIndicator' src='progress.gif' style='visibility: hidden; width: 16px; height: 16px;'></span>
-        <span class='value' id='folderValue'></span>
-        <br>
-        <span class='label' id='sizeLabel'>Size:</span>
-        <span class='value' id='sizeValue'></span>
-        <br>
-        <span class='label' id='filesLabel'>Files:</span>
-        <span class='value' id='filesValue'></span>
-        <br>
-        <span class='label' id='percentLabel'>Usage:</span>
-        <span class='value' id='percentValue'></span>
+    <!-- 
+    <DIV STYLE="width:100%;height:100%; filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#550000FF, endColorstr=#55FFFF00)" >
+    -->
+    <div id='bodyshape' style='width: 100%; height: 100%; position'>
+        <v:roundrect style="width: 130px; height: 245px;">
+            <v:fill type='gradient' color="#202020" color2="#404040"/>
+        </v:roundrect>
     </div>
-    <div id='debugDiv' style='white-space: nowrap; display: none; overflow: scroll; background-color: rgb(0,0,0); color: red; z-index: 100; position: absolute; left: 0px; top: 75px; width: 130px; height: 125px; font-size: 6pt;'>
+    <div id='processingScreen' style='width: 130px; height: 245px; position: absolute; left: 0px; top: 0px; visibility: visible;'>
+        <table style='width: 100%; height: 100%;' cellspacing='0' cellpadding='0'>
+            <tr>
+                <td style='width: 100%; height: 100%; margin: 0px; padding: 0px; text-align: center; vertical-align: middle'>
+                    <div id='processingScreenContent'>
+                        <img src='icon.png'>
+                        <br>
+                        Folder Slice
+                        <br>
+                        <br>
+                        <div id='processingScreenText'>
+                            <img id='progressIndicator' src='progress.gif' style='visibility: hidden; width: 16px; height: 16px;'>
+                            <span class='label' id='processingLabel'></span>
+                            <br>
+                            <span class='value' id='processingValue'></span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
-    <div id='mainDiv' style='width: 65px; height: 45px; position: absolute; left: 0px; top: 200px; font-size: 6pt;'>
-    </div>
-    <div id='childrenDiv' style='width: 65px; height: 45px; position: absolute; left: 65px; top: 200px; font-size: 6pt;'>
+    <div id='resultsScreen' style='width: 130px; height: 245px; position: absolute; left: 0px; top: 0px; visibility: hidden;'>
+        <div id='textDiv' style='padding-top: 4px; padding-left: 8px; padding-bottom: 0px; padding-right: 8px; position: absolute; left: 0px; top: 0px; width: 130px; height: 200px;'>
+            <button onclick='cancel()'>~</button>
+            <span class='label' id='folderLabel'><img id='progressIndicator' src='progress.gif' style='visibility: hidden; width: 16px; height: 16px;'></span>
+            <span class='value' id='folderValue'></span>
+            <br>
+            <span class='label' id='sizeLabel'>Size:</span>
+            <span class='value' id='sizeValue'></span>
+            <br>
+            <span class='label' id='filesLabel'>Files:</span>
+            <span class='value' id='filesValue'></span>
+            <br>
+            <span class='label' id='percentLabel'>Usage:</span>
+            <span class='value' id='percentValue'></span>
+        </div>
+        <div id='debugDiv' style='white-space: nowrap; display: none; overflow: scroll; background-color: rgb(0,0,0); color: red; z-index: 100; position: absolute; left: 0px; top: 75px; width: 130px; height: 125px; font-size: 6pt;'>
+        </div>
+        <div id='mainDiv' style='width: 65px; height: 45px; position: absolute; left: 0px; top: 200px; font-size: 6pt;'>
+        </div>
+        <div id='childrenDiv' style='width: 65px; height: 45px; position: absolute; left: 65px; top: 200px; font-size: 6pt;'>
+        </div>
     </div>
 </body>
 </html>

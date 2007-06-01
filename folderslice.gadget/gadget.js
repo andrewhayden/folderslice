@@ -11,6 +11,38 @@ var sizeUnits = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 var gadgetState = new Object;
 var DEBUG = false;
 
+function startup()
+{
+    progressIndicatorOff();
+    showProcessingScreen();
+    showDefaultProcessingText();
+
+    // Init state object
+    gadgetState.visited = new Array;
+    gadgetState.numVisited = 0;
+    gadgetState.target = null;
+    gadgetState.timerId = 0;
+    gadgetState.invocationCounter = 0;
+    gadgetState.maxFilesPerInterval = 100;
+    gadgetState.restIntervalMillis = 25;
+    gadgetState.tallySizeBytes = 0;
+    gadgetState.tallyStack = new Array(0);
+    gadgetState.numFiles = 0;
+    gadgetState.numFolders = 0;
+
+    // Set up default colors
+    setPieColors("#a0a0a0", "#333333");
+    setSliceColors(0, "#ff0000", "#400000");
+    setSliceColors(1, "#00ff00", "#004000");
+    setSliceColors(2, "#0000ff", "#000040");
+
+    if (DEBUG)
+    {
+        document.getElementById("debugDiv").style.display="block";
+        debug("Debug ENABLED");
+    }
+}
+
 function cancel()
 {
     if (gadgetState.timerId != 0)
@@ -18,9 +50,38 @@ function cancel()
         gadgetState.invocationCounter++;
         clearTimeout(gadgetState.timerId);
         gadgetState.timerId = 0;
-        clearText();
         progressIndicatorOff();
+        showDefaultProcessingText()
     }
+}
+
+function showProcessingScreen()
+{
+    document.getElementById('resultsScreen').style.visibility="hidden";
+    document.getElementById('processingScreen').style.visibility="visible";
+}
+
+function showDefaultProcessingText()
+{
+    document.getElementById('processingLabel').innerText="Drag a drive or folder";
+    document.getElementById('processingValue').innerText="here to begin...";
+}
+
+function showProcessingProgressText()
+{
+    document.getElementById('processingLabel').innerText="Processing...";
+    document.getElementById('processingValue').innerText="";
+}
+
+function updateProgress(numFiles)
+{
+    document.getElementById('processingValue').innerText=numFiles + " files";
+}
+
+function showResultsScreen()
+{
+    document.getElementById('processingScreen').style.visibility="hidden";
+    document.getElementById('resultsScreen').style.visibility="visible";
 }
 
 function progressIndicatorOn()
@@ -39,33 +100,6 @@ function progressIndicatorOff()
     element.style.visibility = "hidden";
     element.style.width="0px";
     element.style.height="0px";
-}
-
-function startup()
-{
-    clearText();
-    gadgetState.visited = new Array;
-    gadgetState.numVisited = 0;
-    gadgetState.target = null;
-    gadgetState.timerId = 0;
-    gadgetState.invocationCounter = 0;
-    gadgetState.maxFilesPerInterval = 100;
-    gadgetState.restIntervalMillis = 25;
-    gadgetState.tallySizeBytes = 0;
-    gadgetState.tallyStack = new Array(0);
-    gadgetState.numFiles = 0;
-    gadgetState.numFolders = 0;
-
-    setPieColors("#a0a0a0", "#333333");
-    setSliceColors(0, "#ff0000", "#400000");
-    setSliceColors(1, "#00ff00", "#004000");
-    setSliceColors(2, "#0000ff", "#000040");
-    progressIndicatorOff();
-    if (DEBUG)
-    {
-        document.getElementById("debugDiv").style.display="block";
-        debug("Debug ENABLED");
-    }
 }
 
 function dropShipment()
@@ -143,8 +177,8 @@ function kickOff()
     }
     else
     {
-        clearText();
-        setFolderValue("Processing...");
+        showProcessingScreen();
+        showProcessingProgressText();
         progressIndicatorOn();
     }
 
@@ -178,12 +212,10 @@ function kickOff()
     }
 }
 
-/**
- * Completes the process, rendering information and graphics.
- */ 
-function finishUp()
+
+function updateTargetResults(pieDivId)
 {
-    var mainDiv = document.getElementById("mainDiv");
+    var mainDiv = document.getElementById(pieDivId);
     var fullWidth = mainDiv.style.pixelWidth;
     var fullHeight = mainDiv.style.pixelHeight;
     var centerX = fullWidth / 2;
@@ -213,9 +245,7 @@ function finishUp()
     var formattedPercent = (percentUsedSpaceUsedByFolder * 100).toFixed(1);
     var formattedSize = formatSizeNice(targetSizeBytes);
 
-    progressIndicatorOff();
-    setFolderValue(gadgetState.target.name.length > 15 ?
-        (gadgetState.target.name.substr(0,15) + "...") : gadgetState.target.name);
+    setFolderValue(gadgetState.target.name);
     setSizeValue(formattedSize);
     setFilesValue(gadgetState.numFiles);
     setPercentOfUsedSpaceValue((formattedPercent < 10 ? "0" : "") + formattedPercent + "% of used");
@@ -225,17 +255,41 @@ function finishUp()
     setSliceColors(0, "#ffffff", "#a0a0a0");
     makePieWithSlices("mainDiv", pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100);
+}
+
+
+function updateChildrenResults(pieDivId)
+{
+    var mainDiv = document.getElementById(pieDivId);
+    var fullWidth = mainDiv.style.pixelWidth;
+    var fullHeight = mainDiv.style.pixelHeight;
+    var centerX = fullWidth / 2;
+    var centerY = fullHeight / 2;
+    var smallestDimension = fullHeight;
+    if (fullHeight > fullWidth)
+    {
+        smallestDimension = fullWidth;
+    }
+
+    var pieWidth = smallestDimension;
+    var pieHeight = pieWidth;
+    var sliceOffset = 3;
+    var pieRadius = (smallestDimension / 2) - (sliceOffset * 2);
+    var pieX = centerX;
+    var pieY = centerY;
 
     var sortedChildren = getEntriesDecreasingOrder(gadgetState.target.path);
     if (DEBUG)
     {
         for (var x=0; x<sortedChildren.length; x++)
         {
-            debug("\n#" + x + ": " + sortedChildren[x].path + ": " + sortedChildren[x].size);
+            debug("\n#" + x + ": " + sortedChildren[x].path + ": "
+                + sortedChildren[x].size);
         }
     }
 
-    sliceSizes = new Array;
+    var targetSizeBytes = gadgetState.tallySizeBytes;
+    var sliceSizes = new Array;
     for (var x=0; x<sortedChildren.length && x<3; x++)
     {
         var percentSpaceFromParent = sortedChildren[x].size / targetSizeBytes;
@@ -244,6 +298,17 @@ function finishUp()
     setSliceColors(0, "#ff0000", "#400000");
     makePieWithSlices("childrenDiv", pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100);
+}
+
+/**
+ * Completes the process, rendering information and graphics.
+ */ 
+function finishUp()
+{
+    progressIndicatorOff();
+    showResultsScreen();
+    updateTargetResults("mainDiv");
+    updateChildrenResults("childrenDiv");
 
     // Clean up right away to avoid holding onto memory we don't need
     gadgetState.visited = null;
@@ -334,7 +399,7 @@ function tallyFolderSize(invocationCounter)
             // with any great frequency in reality, and the program will still
             // function in a degraded mode if it does.)
             gadgetState.tallyStack.push(tallyState);
-            setFolderValue(gadgetState.numVisited + " files");
+            updateProgress(gadgetState.numVisited);
 
             // Set the timeout to come back here in a little while...
             if (DEBUG)
@@ -495,7 +560,8 @@ function clearText()
 
 function setFolderValue(text)
 {
-    document.getElementById("folderValue").innerText = text;
+    var newText = text.length > 15 ? tetxt.substr(0,15) + "..." : text;
+    document.getElementById("folderValue").innerText = newText;
 }
 
 function setSizeValue(text)
