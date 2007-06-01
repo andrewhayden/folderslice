@@ -425,7 +425,7 @@ function makeColorSwatch(index)
     {
         // if (DEBUG) debug("creating swatch for child " + id);
         // Clear any old data in the div
-        clearElement(gadgetState.childrenSwatchDivID + index);
+        clearElement(id);
 
         // Create swatch
         var swatchElement = document.createElement("v:roundrect");
