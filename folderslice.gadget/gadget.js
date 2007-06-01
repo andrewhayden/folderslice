@@ -19,6 +19,32 @@ function startup()
         debug("Debug ENABLED");
     }
 
+    try
+    {
+        startupInternal()
+    }
+    catch(error)
+    {
+        var errorText = error.name + ": " + error;
+        if (error.message)
+        {
+            errorText += ": " + error.message;
+        }
+        else if (error.cause)
+        {
+            errorText += ": " + error.cause;
+        }
+        else if (error.description)
+        {
+            errorText += ": " + error.description;
+        }
+
+        if (DEBUG) debug(errorText);
+    }
+}
+
+function startupInternal()
+{
     // Init state object
     gadgetState.visited = new Array;
     gadgetState.numVisited = 0;
@@ -35,8 +61,27 @@ function startup()
     gadgetState.targetPieDivId = "targetPieDiv";
     gadgetState.targetSuffix = "_target";
     gadgetState.childrenPieDivId = "childrenPieDiv";
+    gadgetState.childrenSwatchDivId = "childSwatchDiv";
     gadgetState.progressIndicatorId = "progressIndicator";
     gadgetState.childSuffix = "_child";
+    gadgetState.maxTargetChars = 12;
+    gadgetState.maxChildChars = 16;
+    gadgetState.pieColors = new Object;
+    gadgetState.pieColors.color1 = "#a0a0a0";
+    gadgetState.pieColors.color2 = "#333333";
+    gadgetState.targetSliceColors = new Object;
+    gadgetState.targetSliceColors.color1 = "#ffffff";
+    gadgetState.targetSliceColors.color2 = "#a0a0a0";
+    gadgetState.childSliceColors = new Array(0);
+    gadgetState.childSliceColors[0] = new Object;
+    gadgetState.childSliceColors[0].color1 = "#ff0000";
+    gadgetState.childSliceColors[0].color2 = "#400000";
+    gadgetState.childSliceColors[1] = new Object;
+    gadgetState.childSliceColors[1].color1 = "#00ff00";
+    gadgetState.childSliceColors[1].color2 = "#004000";
+    gadgetState.childSliceColors[2] = new Object;
+    gadgetState.childSliceColors[2].color1 = "#0000ff";
+    gadgetState.childSliceColors[2].color2 = "#000040";
 
     // Show defaults.
     setVisible(gadgetState.progressIndicatorId, false);
@@ -46,10 +91,10 @@ function startup()
     showDefaultProcessingText();
 
     // Set up default colors
-    setPieColors("#a0a0a0", "#333333");
-    setSliceColors(0, "#ff0000", "#400000");
-    setSliceColors(1, "#00ff00", "#004000");
-    setSliceColors(2, "#0000ff", "#000040");
+    setPieColors(gadgetState.pieColors.color1, gadgetState.pieColors.color2);
+    setSliceColors(0, gadgetState.childSliceColors[0].color1, gadgetState.childSliceColors[0].color2);
+    setSliceColors(1, gadgetState.childSliceColors[1].color1, gadgetState.childSliceColors[1].color2);
+    setSliceColors(2, gadgetState.childSliceColors[2].color1, gadgetState.childSliceColors[2].color2);
 }
 
 function cancel()
@@ -296,13 +341,13 @@ function updateTargetResults(pieDivId)
     var percentUsedSpaceUsedByFolder = targetSizeBytes / (usedSpaceMB * 1024 * 1024);
 
     /* FIXME: Use the number of files from the visited[] hash. */
-    updateStats(gadgetState.targetSuffix, 12,
+    updateStats(gadgetState.targetSuffix, gadgetState.maxTargetChars,
         gadgetState.target.name, percentUsedSpaceUsedByFolder,
         gadgetState.tallySizeBytes, gadgetState.numFiles);
 
     var sliceSizes = new Array;
     sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
-    setSliceColors(0, "#ffffff", "#a0a0a0");
+    setSliceColors(0, gadgetState.targetSliceColors.color1, gadgetState.targetSliceColors.color2);
     makePieWithSlices(pieDivId, pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100);
 }
@@ -350,7 +395,7 @@ function updateChildrenResults(pieDivId)
         {
             sliceSizes[index] = percentSpaceFromParent * 360;
     
-            updateStats(gadgetState.childSuffix + index, 18,
+            updateStats(gadgetState.childSuffix + index, gadgetState.maxChildChars,
                 childEntry.name, percentSpaceFromParent,
                 sortedChildren[index].size, sortedChildren[index].numFiles);
         }
@@ -359,14 +404,54 @@ function updateChildrenResults(pieDivId)
             //Deleted by the user before we got here perhaps... (ewww)
             sliceSizes[index] = 0;
     
-            updateStats(gadgetState.childSuffix + index, 18,
+            updateStats(gadgetState.childSuffix + index, gadgetState.maxChildChars,
                 "[Unknown]", percentSpaceFromParent,
                 sortedChildren[index].size, sortedChildren[index].numFiles);
         }
+
+        // Fill color swatches, if they exist
+        makeColorSwatch(index);
     }
-    setSliceColors(0, "#ff0000", "#400000");
+    setSliceColors(0, gadgetState.childSliceColors[0].color1, gadgetState.childSliceColors[0].color2);
     makePieWithSlices(pieDivId, pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100);
+}
+
+function makeColorSwatch(index)
+{
+    var id = gadgetState.childrenSwatchDivId + index;
+    var element = document.getElementById(id);
+    if (element)
+    {
+        // if (DEBUG) debug("creating swatch for child " + id);
+        // Clear any old data in the div
+        clearElement(gadgetState.childrenSwatchDivID + index);
+
+        // Create swatch
+        var swatchElement = document.createElement("v:roundrect");
+        swatchElement.style.width = "16px";
+        swatchElement.style.height = "16px";
+        swatchElement.arcSize = "30%";
+        var fillElement = document.createElement("v:fill");
+        fillElement.type="gradient";
+        fillElement.color=gadgetState.childSliceColors[index].color1;
+        fillElement.color2=gadgetState.childSliceColors[index].color2;
+
+        swatchElement.appendChild(fillElement);
+        element.appendChild(swatchElement);
+    }
+}
+
+function clearElement(elementId)
+{
+    var element = document.getElementById(elementId);
+    if (element)
+    {
+        while(element.children && element.children.length > 0)
+        {
+            element.removeChild(element.children(0));
+        }
+    }
 }
 
 /**
