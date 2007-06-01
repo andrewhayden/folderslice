@@ -1,4 +1,3 @@
-var defaultMessage = "Drag folder(s) here..."
 var gadgetPath = System.Gadget.path;
 
 // List of archive formats we will not open
@@ -13,9 +12,12 @@ var DEBUG = false;
 
 function startup()
 {
-    progressIndicatorOff();
-    showProcessingScreen();
-    showDefaultProcessingText();
+    // Prepare for debugging
+    if (DEBUG)
+    {
+        document.getElementById("debugDiv").style.display="block";
+        debug("Debug ENABLED");
+    }
 
     // Init state object
     gadgetState.visited = new Array;
@@ -29,29 +31,36 @@ function startup()
     gadgetState.tallyStack = new Array(0);
     gadgetState.numFiles = 0;
     gadgetState.numFolders = 0;
+    gadgetState.cancelButtonId = "cancelButton";
+    gadgetState.targetPieDivId = "targetPieDiv";
+    gadgetState.targetSuffix = "_target";
+    gadgetState.childrenPieDivId = "childrenPieDiv";
+    gadgetState.progressIndicatorId = "progressIndicator";
+    gadgetState.childSuffix = "_child";
+
+    // Show defaults.
+    setVisible(gadgetState.progressIndicatorId, false);
+    setVisible(gadgetState.cancelButtonId, false);
+    setEnabled(gadgetState.cancelButtonId, false);
+    showProcessingScreen();
+    showDefaultProcessingText();
 
     // Set up default colors
     setPieColors("#a0a0a0", "#333333");
     setSliceColors(0, "#ff0000", "#400000");
     setSliceColors(1, "#00ff00", "#004000");
     setSliceColors(2, "#0000ff", "#000040");
-
-    if (DEBUG)
-    {
-        document.getElementById("debugDiv").style.display="block";
-        debug("Debug ENABLED");
-    }
 }
 
 function cancel()
 {
-    if (gadgetState.timerId != 0)
+    if (gadgetState.timerId !== 0)
     {
         gadgetState.invocationCounter++;
         clearTimeout(gadgetState.timerId);
         gadgetState.timerId = 0;
-        progressIndicatorOff();
-        showDefaultProcessingText()
+        setVisible(gadgetState.progressIndicatorId, false);
+        showDefaultProcessingText();
     }
 }
 
@@ -63,12 +72,16 @@ function showProcessingScreen()
 
 function showDefaultProcessingText()
 {
+    setVisible(gadgetState.cancelButtonId, false);
+    setEnabled(gadgetState.cancelButtonId, false);
     document.getElementById('processingLabel').innerText="Drag a drive or folder";
     document.getElementById('processingValue').innerText="here to begin...";
 }
 
 function showProcessingProgressText()
 {
+    setEnabled(gadgetState.cancelButtonId, true);
+    setVisible(gadgetState.cancelButtonId, true);
     document.getElementById('processingLabel').innerText="Processing...";
     document.getElementById('processingValue').innerText="";
 }
@@ -84,22 +97,29 @@ function showResultsScreen()
     document.getElementById('resultsScreen').style.visibility="visible";
 }
 
-function progressIndicatorOn()
+function setVisible(elementId, visible)
 {
-    var element = document.getElementById("progressIndicator");
-    element.style.visibility = "visible";
-    element.style.width=element.oldWidth;
-    element.style.height=element.oldHeight;
+    var element = document.getElementById(elementId);
+    if (visible)
+    {
+        element.style.visibility = "visible";
+        element.style.width=element.oldWidth;
+        element.style.height=element.oldHeight;
+    }
+    else
+    {
+        element.oldWidth = element.style.width;
+        element.oldHeight = element.style.height;
+        element.style.visibility = "hidden";
+        element.style.width="0px";
+        element.style.height="0px";
+    }
 }
 
-function progressIndicatorOff()
+function setEnabled(elementId, enabled)
 {
-    var element = document.getElementById("progressIndicator");
-    element.oldWidth = element.style.width;
-    element.oldHeight = element.style.height;
-    element.style.visibility = "hidden";
-    element.style.width="0px";
-    element.style.height="0px";
+    var element = document.getElementById(elementId);
+    element.style.enabled = (enabled ? "true" : "false");
 }
 
 function dropShipment()
@@ -124,7 +144,7 @@ function dropShipment()
             errorText += ": " + error.description;
         }
 
-        mainDiv.innerText =  errorText;
+        if (DEBUG) debug(errorText);
     }
 }
 
@@ -150,7 +170,7 @@ function runloopDebug(invocationCounter)
             errorText += ": " + error.description;
         }
 
-        mainDiv.innerText =  errorText;
+        if (DEBUG) debug(errorText);
     }
 }
 
@@ -172,14 +192,20 @@ function kickOff()
 
     if (!target.isFolder)
     {
-        clearText(); // nothing to do
+        showDefaultProcessingText();
+        setVisible(gadgetState.progressIndicatorId, false);
+        setVisible(gadgetState.cancelButtonId, false);
+        setEnabled(gadgetState.cancelButtonId, false);
+        showProcessingScreen();
         return;
     }
     else
     {
-        showProcessingScreen();
         showProcessingProgressText();
-        progressIndicatorOn();
+        setEnabled(gadgetState.cancelButtonId, true);
+        setVisible(gadgetState.progressIndicatorId, true);
+        setVisible(gadgetState.cancelButtonId, true);
+        showProcessingScreen();
     }
 
     gadgetState.visited = new Array(0);
@@ -201,9 +227,10 @@ function kickOff()
     tallyState.bootstrap = true;
     tallyState.target = target;
     gadgetState.tallyStack.push(tallyState);
+    
     if (DEBUG)
     {
-        document.getElementById("debugDiv").innerText = "";
+        debug("kicking off, target=" + target.path);
         gadgetState.timerId = setTimeout('runloopDebug(' + gadgetState.invocationCounter + ')', 1);
     }
     else
@@ -212,6 +239,31 @@ function kickOff()
     }
 }
 
+function updateStats(idSuffix, maxFolderChars, folderName, percent, sizeBytes, numFiles)
+{
+    var formattedPercent = (percent < 0.1 ? "0" : "") + (percent * 100).toFixed(1);
+    var formattedSize = formatSizeNice(sizeBytes);
+
+    var element = document.getElementById("folderName" + idSuffix);
+    if (element)
+    {
+        var folderText = folderName.length > maxFolderChars ?
+            folderName.substr(0,maxFolderChars) + "..." : folderName;
+        element.innerText = folderText;
+    }
+
+    element = document.getElementById("statsLine1" + idSuffix);
+    if (element)
+    {
+        element.innerText = formattedPercent + "% / " + formattedSize;
+    }
+
+    element = document.getElementById("statsLine2" + idSuffix);
+    if (element)
+    {
+        element.innerText = numFiles + " files";
+    }
+}
 
 function updateTargetResults(pieDivId)
 {
@@ -242,18 +294,16 @@ function updateTargetResults(pieDivId)
     var usedSpaceMB = totalSizeMB - freeSpaceMB;
 
     var percentUsedSpaceUsedByFolder = targetSizeBytes / (usedSpaceMB * 1024 * 1024);
-    var formattedPercent = (percentUsedSpaceUsedByFolder * 100).toFixed(1);
-    var formattedSize = formatSizeNice(targetSizeBytes);
 
-    setFolderValue(gadgetState.target.name);
-    setSizeValue(formattedSize);
-    setFilesValue(gadgetState.numFiles);
-    setPercentOfUsedSpaceValue((formattedPercent < 10 ? "0" : "") + formattedPercent + "% of used");
+    /* FIXME: Use the number of files from the visited[] hash. */
+    updateStats(gadgetState.targetSuffix, 12,
+        gadgetState.target.name, percentUsedSpaceUsedByFolder,
+        gadgetState.tallySizeBytes, gadgetState.numFiles);
 
     var sliceSizes = new Array;
     sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
     setSliceColors(0, "#ffffff", "#a0a0a0");
-    makePieWithSlices("mainDiv", pieX, pieY, sliceOffset, pieRadius,
+    makePieWithSlices(pieDivId, pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100);
 }
 
@@ -283,20 +333,39 @@ function updateChildrenResults(pieDivId)
     {
         for (var x=0; x<sortedChildren.length; x++)
         {
-            debug("\n#" + x + ": " + sortedChildren[x].path + ": "
-                + sortedChildren[x].size);
+            debug("#" + x + ": " + sortedChildren[x].path + ": " + sortedChildren[x].size);
         }
     }
 
+    var numChildren = sortedChildren.length;
+    document.getElementById("childrenCount").innerText = (numChildren >= 3 ? 3 : numChildren);
+
     var targetSizeBytes = gadgetState.tallySizeBytes;
     var sliceSizes = new Array;
-    for (var x=0; x<sortedChildren.length && x<3; x++)
+    for (var index=0; index<numChildren && index<3; index++)
     {
-        var percentSpaceFromParent = sortedChildren[x].size / targetSizeBytes;
-        sliceSizes[x] = percentSpaceFromParent * 360;
+        var percentSpaceFromParent = sortedChildren[index].size / targetSizeBytes;
+        var childEntry = System.Shell.itemFromPath(sortedChildren[index].path);
+        if (childEntry)
+        {
+            sliceSizes[index] = percentSpaceFromParent * 360;
+    
+            updateStats(gadgetState.childSuffix + index, 18,
+                childEntry.name, percentSpaceFromParent,
+                sortedChildren[index].size, sortedChildren[index].numFiles);
+        }
+        else
+        {
+            //Deleted by the user before we got here perhaps... (ewww)
+            sliceSizes[index] = 0;
+    
+            updateStats(gadgetState.childSuffix + index, 18,
+                "[Unknown]", percentSpaceFromParent,
+                sortedChildren[index].size, sortedChildren[index].numFiles);
+        }
     }
     setSliceColors(0, "#ff0000", "#400000");
-    makePieWithSlices("childrenDiv", pieX, pieY, sliceOffset, pieRadius,
+    makePieWithSlices(pieDivId, pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100);
 }
 
@@ -305,10 +374,13 @@ function updateChildrenResults(pieDivId)
  */ 
 function finishUp()
 {
-    progressIndicatorOff();
     showResultsScreen();
-    updateTargetResults("mainDiv");
-    updateChildrenResults("childrenDiv");
+    setVisible(gadgetState.progressIndicatorId, false);
+    setVisible(gadgetState.cancelButtonId, false);
+    setEnabled(gadgetState.cancelButtonId, false);
+
+    updateTargetResults(gadgetState.targetPieDivId);
+    updateChildrenResults(gadgetState.childrenPieDivId);
 
     // Clean up right away to avoid holding onto memory we don't need
     gadgetState.visited = null;
@@ -343,7 +415,8 @@ function tallyHelper(invocationCounter)
 {
     while(tallyFolderSize(invocationCounter))
     {
-        // Yay.
+        // truly nothing here.  This is just a while loop
+        // that goes forever...
     }
 }
 
@@ -360,13 +433,17 @@ function tallyFolderSize(invocationCounter)
         return false;
     }
 
+    if (DEBUG) debug("tallyStack.length=" + gadgetState.tallyStack.length);
+
     // If we aren't behind the times, see if there is work to be done.
-    if (gadgetState.tallyStack.length == 0)
+    if (gadgetState.tallyStack.length === 0)
     {
         // No work to be done.  We are finished!
         finishUp();
         return false;
     }
+
+    if (DEBUG) debug("working...");
 
     // Otherwise, there is work to be done.
     var tallyState = gadgetState.tallyStack.pop();
@@ -386,8 +463,7 @@ function tallyFolderSize(invocationCounter)
     var numLoops = 0;
     for (; tallyState.index<tallyState.numEntries; tallyState.index++)
     {
-        if (gadgetState.numVisited > 0 && numLoops > 0
-            && (gadgetState.numVisited % gadgetState.maxFilesPerInterval) == 0)
+        if (gadgetState.numVisited > 0 && numLoops > 0 && (gadgetState.numVisited % gadgetState.maxFilesPerInterval) === 0)
         {
             // We need to rest for a while to let the system have some time.
             // Push our current state onto the stack...
@@ -404,7 +480,7 @@ function tallyFolderSize(invocationCounter)
             // Set the timeout to come back here in a little while...
             if (DEBUG)
             {
-                debug("\nresting for " + gadgetState.restIntervalMillis + "ms");
+                debug("resting for " + gadgetState.restIntervalMillis + "ms");
                 gadgetState.timerId = setTimeout('runloopDebug(' + invocationCounter + ')', gadgetState.restIntervalMillis);
             }
             else
@@ -431,7 +507,7 @@ function tallyFolderSize(invocationCounter)
         else if (gadgetState.visited[entry.path])
         {
             // Somehow ended up in a circular loop.  Stop!!!
-            if (DEBUG) debug("\nbroke out of loop");
+            if (DEBUG) debug("broke out of loop");
             ok = false;
         }
         else
@@ -465,7 +541,7 @@ function tallyFolderSize(invocationCounter)
                     gadgetState.visited[entry.path].numFiles = 0;
                     gadgetState.visited[entry.path].path = entry.path;
 
-                    // if (DEBUG) debug("\nfolder:" + path);
+                    // if (DEBUG) debug("folder:" + path);
                     // Recurse.
                     var newState = new Object;
                     newState.bootstrap = true;
@@ -480,7 +556,7 @@ function tallyFolderSize(invocationCounter)
                     gadgetState.tallySizeBytes += entry.size;
                     gadgetState.numFiles++;
                     addSizeRecursive(tallyState.target.path, entry.size);
-                    // if (DEBUG) debug("\narchive:" + path);
+                    // if (DEBUG) debug("archive:" + path);
                 }
             }
             else
@@ -490,7 +566,7 @@ function tallyFolderSize(invocationCounter)
                 gadgetState.tallySizeBytes += entry.size;
                 gadgetState.numFiles++;
                 addSizeRecursive(tallyState.target.path, entry.size);
-                // if (DEBUG) debug("\nfile:" + entry.path);
+                // if (DEBUG) debug("file:" + entry.path);
             }
         }
     }
@@ -547,36 +623,7 @@ function isArchive(path)
 
 function debug(text)
 {
-    document.getElementById("debugDiv").innerText += text;
-}
-
-function clearText()
-{
-    setFolderValue(defaultMessage);
-    setSizeValue("");
-    setFilesValue("");
-    setPercentOfUsedSpaceValue("");
-}
-
-function setFolderValue(text)
-{
-    var newText = text.length > 15 ? tetxt.substr(0,15) + "..." : text;
-    document.getElementById("folderValue").innerText = newText;
-}
-
-function setSizeValue(text)
-{
-    document.getElementById('sizeValue').innerText = text;
-}
-
-function setFilesValue(text)
-{
-    document.getElementById('filesValue').innerText = text;
-}
-
-function setPercentOfUsedSpaceValue(text)
-{
-    document.getElementById('percentValue').innerText = text;
+    document.getElementById("debugDiv").innerText += "\n" + text;
 }
 
 /**
@@ -599,10 +646,10 @@ function getEntriesDecreasingOrder(path)
     var children = new Array(0);
     for (var x=0; x<numEntries; x++)
     {
-        var path = contents.item(x).path;
-        if (gadgetState.visited[path])
+        var childPath = contents.item(x).path;
+        if (gadgetState.visited[childPath])
         {
-            children.push(gadgetState.visited[path]);
+            children.push(gadgetState.visited[childPath]);
         }
     }
     children.sort(entryCompare);
