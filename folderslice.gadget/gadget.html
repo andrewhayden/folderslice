@@ -8,6 +8,11 @@
             font-size: 8pt;
         }
         
+        span.value
+        {
+            font-size: 6pt;
+        }
+        
         v\:*
         {
             behavior: url(#default#VML);
@@ -59,6 +64,11 @@
         {
             border: none;
         }
+
+        span.label, span.value
+        {
+            overflow: clip;
+        }
     </style>
     <script src="pie.js" language="javascript" type="text/javascript"></script>
     <script src="gadget.js" language="javascript" type="text/javascript"></script>
@@ -88,36 +98,68 @@
                         <br>
                         <div id='processingScreenText'>
                             <img id='progressIndicator' src='progress.gif' style='visibility: hidden; width: 16px; height: 16px;'>
-                            <span class='label' id='processingLabel'></span>
+                            <span id='processingLabel'></span>
+                            <button id='cancelButton' onclick='cancel()' style='visibility: hidden;'>Cancel</button>
                             <br>
-                            <span class='value' id='processingValue'></span>
+                            <span id='processingValue'></span>
                         </div>
                     </div>
                 </td>
             </tr>
         </table>
     </div>
+
     <div id='resultsScreen' style='width: 130px; height: 245px; position: absolute; left: 0px; top: 0px; visibility: hidden;'>
-        <div id='textDiv' style='padding-top: 4px; padding-left: 8px; padding-bottom: 0px; padding-right: 8px; position: absolute; left: 0px; top: 0px; width: 130px; height: 200px;'>
-            <button onclick='cancel()'>~</button>
-            <span class='label' id='folderLabel'><img id='progressIndicator' src='progress.gif' style='visibility: hidden; width: 16px; height: 16px;'></span>
-            <span class='value' id='folderValue'></span>
-            <br>
-            <span class='label' id='sizeLabel'>Size:</span>
-            <span class='value' id='sizeValue'></span>
-            <br>
-            <span class='label' id='filesLabel'>Files:</span>
-            <span class='value' id='filesValue'></span>
-            <br>
-            <span class='label' id='percentLabel'>Usage:</span>
-            <span class='value' id='percentValue'></span>
+        <div id='targetDiv' style='position: absolute; left: 0px; top: 0px; width: 130px; height: 45px;'>
+            <div id='targetPieDiv' style='position: absolute; left: 0px; top: 0px; width: 45px; height: 45px;'></div>
+            <div id='targetTextDiv' style='position: absolute; left: 45px; top: 0px; padding-top: 2px; width: 85px; height: 45px;'>
+                <span class='label' style='font-weight: bold' id='folderName_target'></span>
+                <br>
+                <span class='value' id='statsLine1_target'></span>
+                <br>
+                <span class='value' id='statsLine2_target'></span>
+            </div>
         </div>
-        <div id='debugDiv' style='white-space: nowrap; display: none; overflow: scroll; background-color: rgb(0,0,0); color: red; z-index: 100; position: absolute; left: 0px; top: 75px; width: 130px; height: 125px; font-size: 6pt;'>
+        <div id='childrenDiv' style='position: absolute; left: 0px; top: 45px; width: 130px; height: 200px;'>
+            <div id='childrenPieDiv' style='width: 45px; height: 45px; position: absolute; left: 0px; top: 0px;'></div>
+            <div id='childrenSummaryDiv' style='position: absolute; left: 45px; top: 0px; padding-top: 2px; width: 85px; height: 45px;'>
+                <table style='border: none; width: 80px; height: 45px;' cellpadding='0' cellspacing='0'>
+                    <tr>
+                        <td style='font-weight: bold; border-bottom: 1px solid white;'>Child Folders</td>
+                    </tr>
+                    <tr>
+                        <td>(<span id='childrenCount'>3</span> Largest)</td>
+                    </tr>
+                    <tr>
+                        <td><a href='#'>More Details...</a>
+                    </tr>
+                </table>
+            </div>
+            <div id='childTextDiv0' style='position: absolute; left: 0px; top: 45px; padding-top: 2px; padding-left: 4px; width: 130px; height: 45px;'>
+                <span class='label' style='font-weight: bold' id='folderName_child0'></span>
+                <br>
+                <span class='value' id='statsLine1_child0'></span>
+                <br>
+                <span class='value' id='statsLine2_child0'></span>
+            </div>
+            <div id='childTextDiv1' style='position: absolute; left: 0px; top: 90px; padding-top: 2px; padding-left: 4px;  width: 130px; height: 45px;'>
+                <span class='label' style='font-weight: bold' id='folderName_child1'></span>
+                <br>
+                <span class='value' id='statsLine1_child1'></span>
+                <br>
+                <span class='value' id='statsLine2_child1'></span>
+            </div>
+            <div id='childTextDiv2' style='position: absolute; left: 0px; top: 135px; padding-top: 2px; padding-left: 4px;  width: 130px; height: 45px;'>
+                <span class='label' style='font-weight: bold' id='folderName_child2'></span>
+                <br>
+                <span class='value' id='statsLine1_child2'></span>
+                <br>
+                <span class='value' id='statsLine2_child2'></span>
+            </div>
         </div>
-        <div id='mainDiv' style='width: 65px; height: 45px; position: absolute; left: 0px; top: 200px; font-size: 6pt;'>
-        </div>
-        <div id='childrenDiv' style='width: 65px; height: 45px; position: absolute; left: 65px; top: 200px; font-size: 6pt;'>
-        </div>
+    </div>
+
+    <div id='debugDiv' style='display: none; white-space: nowrap; overflow: scroll; background-color: rgb(0,0,0); color: red; z-index: 100; position: absolute; left: 0px; top: 75px; width: 130px; height: 170px; font-size: 6pt;'>
     </div>
 </body>
 </html>
