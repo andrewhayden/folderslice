@@ -84,6 +84,10 @@ function startupInternal()
     gadgetState.childSliceColors[2].color2 = "#000040";
 
     // Show defaults.
+    document.getElementById(gadgetState.cancelButtonId).noResize = true;
+    document.getElementById('resultsScreen').noResize = true;
+    document.getElementById('processingScreen').noResize = true;
+    
     setVisible(gadgetState.progressIndicatorId, false);
     setVisible(gadgetState.cancelButtonId, false);
     setEnabled(gadgetState.cancelButtonId, false);
@@ -111,8 +115,8 @@ function cancel()
 
 function showProcessingScreen()
 {
-    document.getElementById('resultsScreen').style.visibility="hidden";
-    document.getElementById('processingScreen').style.visibility="visible";
+    setVisible('resultsScreen', false);
+    setVisible('processingScreen', true);
 }
 
 function showDefaultProcessingText()
@@ -145,19 +149,33 @@ function showResultsScreen()
 function setVisible(elementId, visible)
 {
     var element = document.getElementById(elementId);
-    if (visible)
+    if (element)
     {
-        element.style.visibility = "visible";
-        element.style.width=element.oldWidth;
-        element.style.height=element.oldHeight;
-    }
-    else
-    {
-        element.oldWidth = element.style.width;
-        element.oldHeight = element.style.height;
-        element.style.visibility = "hidden";
-        element.style.width="0px";
-        element.style.height="0px";
+        if (visible)
+        {
+            if (!element.noResize)
+            { 
+                element.style.width=element.oldWidth;
+                element.style.height=element.oldHeight;
+            }
+            element.style.visibility = "visible";
+        }
+        else
+        {
+            if (!element.noResize)
+            { 
+                element.oldWidth = element.style.width;
+                element.oldHeight = element.style.height;
+            }
+
+            element.style.visibility = "hidden";
+
+            if (!element.noResize)
+            { 
+                element.style.width="0px";
+                element.style.height="0px";
+            }
+        }
     }
 }
 
