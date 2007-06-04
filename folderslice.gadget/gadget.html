@@ -98,6 +98,7 @@
                 <br>
                 <span class='value' id='statsLine2_target'></span>
             </div>
+            <div id='refreshButton' onclick='refresh()' style='position: absolute; right: 2px; bottom: 2px; width: 16px; height: 16px; border: none; margin: 0px; padding: 0px; background-color: transparent; background-image: url("refresh-dark.png"); background-repeat: no-repeat; z-index: 1000;' onmouseover='highlightRefreshButton()' onmouseout='darkenRefreshButton()'></div>
         </div>
         <div id='childrenDiv' style='position: absolute; left: 0px; top: 45px; width: 130px; height: 200px;'>
             <div id='childrenPieDiv' style='width: 45px; height: 45px; position: absolute; left: 0px; top: 0px;'></div>
@@ -116,7 +117,7 @@
             </div>
             <div id='childrenDiv0' style='position: absolute; left: 0px; top: 50px; width: 130px; height: 45px;'>
                 <div id='childSwatchDiv0' style='position: absolute; left: 2px; top: 14px; width: 16px; height: 16px;'></div>
-                <button id='childGoButton0' onclick='childNavigate("0")' style='position: absolute; right: 2px; top: 14px; width: 16px; height: 16px; border: none; margin: 0px; padding: 0px; background-color: transparent; background-image: url("arrow-dark.png"); background-repeat: no-repeat; z-index: 1000;' onmouseover='highlightButton("0")' onmouseout='darkenButton("0")'></button>
+                <div id='childGoButton0' onclick='childNavigate("0")' style='position: absolute; right: 2px; top: 14px; width: 16px; height: 16px; border: none; margin: 0px; padding: 0px; background-color: transparent; background-image: url("arrow-dark.png"); background-repeat: no-repeat; z-index: 1000;' onmouseover='highlightGoButton("0")' onmouseout='darkenGoButton("0")'></div>
                 <div id='childTextDiv0' style='position: absolute; left: 20px; top: 0px; padding-top: 2px; padding-left: 4px; width: 110px; height: 45px;'>
                     <span class='label' style='font-weight: bold' id='folderName_child0'></span>
                     <br>
@@ -127,7 +128,7 @@
             </div>
             <div id='childrenDiv1' style='position: absolute; left: 0px; top: 95px; width: 130px; height: 45px;'>
                 <div id='childSwatchDiv1' style='position: absolute; left: 2px; top: 14px; width: 16px; height: 16px;'></div>
-                <button id='childGoButton1' onclick='childNavigate("1")' style='position: absolute; right: 2px; top: 14px; width: 16px; height: 16px; border: none; margin: 0px; padding: 0px; background-color: transparent; background-image: url("arrow-dark.png"); background-repeat: no-repeat; z-index: 1000;' onmouseover='highlightButton("1")' onmouseout='darkenButton("1")'></button>
+                <div id='childGoButton1' onclick='childNavigate("1")' style='position: absolute; right: 2px; top: 14px; width: 16px; height: 16px; border: none; margin: 0px; padding: 0px; background-color: transparent; background-image: url("arrow-dark.png"); background-repeat: no-repeat; z-index: 1000;' onmouseover='highlightGoButton("1")' onmouseout='darkenGoButton("1")'></div>
                 <div id='childTextDiv1' style='position: absolute; left: 20px; top: 0px; padding-top: 2px; padding-left: 4px;  width: 110px; height: 45px;'>
                     <span class='label' style='font-weight: bold' id='folderName_child1'></span>
                     <br>
@@ -138,7 +139,7 @@
             </div>
             <div id='childrenDiv2' style='position: absolute; left: 0px; top: 140px; width: 130px; height: 45px;'>
                 <div id='childSwatchDiv2' style='position: absolute; left: 2px; top: 14px; width: 16px; height: 16px;'></div>
-                <button id='childGoButton2' onclick='childNavigate("2")' style='position: absolute; right: 2px; top: 14px; width: 16px; height: 16px; border: none; margin: 0px; padding: 0px; background-color: transparent; background-image: url("arrow-dark.png"); background-repeat: no-repeat; z-index: 1000;' onmouseover='highlightButton("2")' onmouseout='darkenButton("2")'></button>
+                <div id='childGoButton2' onclick='childNavigate("2")' style='position: absolute; right: 2px; top: 14px; width: 16px; height: 16px; border: none; margin: 0px; padding: 0px; background-color: transparent; background-image: url("arrow-dark.png"); background-repeat: no-repeat; z-index: 1000;' onmouseover='highlightGoButton("2")' onmouseout='darkenGoButton("2")'></div>
                 <div id='childTextDiv2' style='position: absolute; left: 20px; top: 0px; padding-top: 2px; padding-left: 4px;  width: 110px; height: 45px;'>
                     <span class='label' style='font-weight: bold' id='folderName_child2'></span>
                     <br>
