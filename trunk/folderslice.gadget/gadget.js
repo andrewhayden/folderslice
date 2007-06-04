@@ -131,6 +131,9 @@ function cancel()
 
 function showProcessingScreen()
 {
+    setVisible('childrenDiv0', false);
+    setVisible('childrenDiv1', false);
+    setVisible('childrenDiv2', false);
     setVisible('resultsScreen', false);
     setVisible('processingScreen', true);
 }
@@ -205,7 +208,8 @@ function dropShipment()
 {
     try
     {
-        kickOff();
+        var droppedItem = System.Shell.itemFromFileDrop(event.dataTransfer, 0);
+        kickOff(droppedItem);
     }
     catch(error)
     {
@@ -256,9 +260,8 @@ function runloopDebug(invocationCounter)
 /**
  * Starts the tallying process. 
  */
-function kickOff()
+function kickOff(droppedItem)
 {
-    var droppedItem = System.Shell.itemFromFileDrop(event.dataTransfer, 0);
     var target;
     if (droppedItem.isLink)
     {
@@ -818,7 +821,7 @@ function getEntriesDecreasingOrder(path)
     return children;
 }
 
-function highlightButton(childId)
+function highlightGoButton(childId)
 {
     var id = gadgetState.childrenGoButtonId + childId;
     var element = document.getElementById(id);
@@ -828,7 +831,7 @@ function highlightButton(childId)
     }
 }
 
-function darkenButton(childId)
+function darkenGoButton(childId)
 {
     var id = gadgetState.childrenGoButtonId + childId;
     var element = document.getElementById(id);
@@ -836,4 +839,27 @@ function darkenButton(childId)
     {
         element.style.backgroundImage = 'url("arrow-dark.png")';
     }
+}
+
+function highlightRefreshButton()
+{
+    var element = document.getElementById("refreshButton");
+    if (element)
+    {
+        element.style.backgroundImage = 'url("refresh-light.png")'
+    }
+}
+
+function darkenRefreshButton(childId)
+{
+    var element = document.getElementById("refreshButton");
+    if (element)
+    {
+        element.style.backgroundImage = 'url("refresh-dark.png")'
+    }
+}
+
+function refresh()
+{
+    kickOff(gadgetState.target);
 }
