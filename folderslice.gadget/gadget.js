@@ -92,6 +92,8 @@ function startupInternal()
     document.getElementById('childrenDiv0').noResize = true;
     document.getElementById('childrenDiv1').noResize = true;
     document.getElementById('childrenDiv2').noResize = true;
+    document.getElementById('parentGoButton').noResize = true;
+    document.getElementById(gadgetState.progressIndicatorId).noResize = true;
     
     setVisible(gadgetState.progressIndicatorId, false);
     setVisible(gadgetState.cancelButtonId, false);
@@ -99,6 +101,7 @@ function startupInternal()
     setVisible('childrenDiv0', false);
     setVisible('childrenDiv1', false);
     setVisible('childrenDiv2', false);
+    setVisible('parentGoButton', false);
     showProcessingScreen();
     showDefaultProcessingText();
 
@@ -134,6 +137,7 @@ function showProcessingScreen()
     setVisible('childrenDiv0', false);
     setVisible('childrenDiv1', false);
     setVisible('childrenDiv2', false);
+    setVisible('parentGoButton', false);
     setVisible('resultsScreen', false);
     setVisible('processingScreen', true);
 }
@@ -172,7 +176,7 @@ function setVisible(elementId, visible)
     {
         if (visible)
         {
-            if (!element.noResize)
+            if (!element.noResize && element.oldWidth && element.oldHeight)
             { 
                 element.style.width=element.oldWidth;
                 element.style.height=element.oldHeight;
@@ -512,10 +516,60 @@ function childNavigate(childId)
 {
     var index = new Number(childId).valueOf();
     var childEntry = System.Shell.itemFromPath(gadgetState.sortedTargetChildren[index].path);
-    debug("in child navigate, entry path=" + childEntry.path);
+    if (DEBUG) debug("navigating to child, path=" + childEntry.path);
     gadgetState.invocationCounter++;
     gadgetState.target = childEntry;
     gadgetState.timerId = setTimeout('finishUp()', 0);
+}
+
+/**
+ * Returns the System.Shell.Item that constitutes the parent of the specified
+ * path, provided that the specified path is not a top-level directory
+ * (e.g., a drive).
+ *
+ * A 'top level directory' is naievely defined here as a path ending with
+ * a file separator character ('\'), as Windows stores the path
+ * to a drive as simply "[letter][colon][backslash]", e.g. "C:\" and "D:\".
+ */
+function getParent(path)
+{
+    var indexOfFileSeparator = path.lastIndexOf("\\");
+    if (indexOfFileSeparator >= 0 && indexOfFileSeparator < path.length - 1)
+    {
+        var newPath = path.substr(0, indexOfFileSeparator);
+        return System.Shell.itemFromPath(newPath);
+    }
+    else
+    {
+        return undefined; // no parent
+    }
+}
+
+
+/**
+ * Navigates to the parent of the current folder.
+ *
+ * If the parent has already been visited, no new scan is performed;
+ * if the parent has not yet been visited, a full scan is required.
+ */
+function parentNavigate()
+{
+    var parent = getParent(gadgetState.target.path);
+    if (parent)
+    {
+        // If we have visited the parent already, we can just display results;
+        // Otherwise, we have to do a full parse.
+        if (gadgetState.visited[parent.path])
+        {
+            gadgetState.invocationCounter++;
+            gadgetState.target = parent;
+            gadgetState.timerId = setTimeout('finishUp()', 0);
+        }
+        else
+        {
+            kickOff(parent);
+        }
+    }
 }
 
 /**
@@ -525,6 +579,16 @@ function finishUp()
 {
     try
     {
+        var parent = getParent(gadgetState.target.path);
+        if (parent !== undefined)
+        {
+            setVisible("parentGoButton", true);
+        }
+        else
+        {
+            setVisible("parentGoButton", false);
+        }
+
         showResultsScreen();
         setVisible(gadgetState.progressIndicatorId, false);
         setVisible(gadgetState.cancelButtonId, false);
@@ -827,7 +891,7 @@ function highlightGoButton(childId)
     var element = document.getElementById(id);
     if (element)
     {
-        element.style.backgroundImage = 'url("arrow-light.png")'
+        element.style.backgroundImage = 'url("arrow-light.png")';
     }
 }
 
@@ -846,7 +910,7 @@ function highlightRefreshButton()
     var element = document.getElementById("refreshButton");
     if (element)
     {
-        element.style.backgroundImage = 'url("refresh-light.png")'
+        element.style.backgroundImage = 'url("refresh-light.png")';
     }
 }
 
@@ -855,7 +919,25 @@ function darkenRefreshButton(childId)
     var element = document.getElementById("refreshButton");
     if (element)
     {
-        element.style.backgroundImage = 'url("refresh-dark.png")'
+        element.style.backgroundImage = 'url("refresh-dark.png")';
+    }
+}
+
+function highlightParentGoButton()
+{
+    var element = document.getElementById("parentGoButton");
+    if (element)
+    {
+        element.style.backgroundImage = 'url("up-light.png")';
+    }
+}
+
+function darkenParentGoButton()
+{
+    var element = document.getElementById("parentGoButton");
+    if (element)
+    {
+        element.style.backgroundImage = 'url("up-dark.png")';
     }
 }
 

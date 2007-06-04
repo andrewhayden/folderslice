@@ -52,6 +52,7 @@
         span.label, span.value
         {
             overflow: clip;
+            white-space: nowrap;
         }
     </style>
     <script src="pie.js" language="javascript" type="text/javascript"></script>
@@ -74,8 +75,8 @@
                         Folder Slice
                         <br>
                         <br>
+                        <img id='progressIndicator' src='progress.gif' style='visibility: hidden; width: 16px; height: 16px;'>
                         <div id='processingScreenText'>
-                            <img id='progressIndicator' src='progress.gif' style='visibility: hidden; width: 16px; height: 16px;'>
                             <span id='processingLabel'></span>
                             <br>
                             <span id='processingValue'></span>
@@ -99,6 +100,7 @@
                 <span class='value' id='statsLine2_target'></span>
             </div>
             <div id='refreshButton' onclick='refresh()' style='position: absolute; right: 2px; bottom: 2px; width: 16px; height: 16px; border: none; margin: 0px; padding: 0px; background-color: transparent; background-image: url("refresh-dark.png"); background-repeat: no-repeat; z-index: 1000;' onmouseover='highlightRefreshButton()' onmouseout='darkenRefreshButton()'></div>
+            <div id='parentGoButton' onclick='parentNavigate()' style='visibility: hidden; position: absolute; right: 18px; bottom: 2px; width: 16px; height: 16px; border: none; margin: 0px; padding: 0px; background-color: transparent; background-image: url("up-dark.png"); background-repeat: no-repeat; z-index: 1000;' onmouseover='highlightParentGoButton()' onmouseout='darkenParentGoButton()'></div>
         </div>
         <div id='childrenDiv' style='position: absolute; left: 0px; top: 45px; width: 130px; height: 200px;'>
             <div id='childrenPieDiv' style='width: 45px; height: 45px; position: absolute; left: 0px; top: 0px;'></div>
