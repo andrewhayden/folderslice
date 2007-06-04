@@ -21,7 +21,7 @@ function startup()
 
     try
     {
-        startupInternal()
+        startupInternal();
     }
     catch(error)
     {
@@ -55,6 +55,7 @@ function startupInternal()
     gadgetState.restIntervalMillis = 25;
     gadgetState.tallySizeBytes = 0;
     gadgetState.tallyStack = new Array(0);
+    gadgetState.sortedTargetChildren = new Array(0);
     gadgetState.numFiles = 0;
     gadgetState.numFolders = 0;
     gadgetState.cancelButtonId = "cancelButton";
@@ -62,6 +63,7 @@ function startupInternal()
     gadgetState.targetSuffix = "_target";
     gadgetState.childrenPieDivId = "childrenPieDiv";
     gadgetState.childrenSwatchDivId = "childSwatchDiv";
+    gadgetState.childrenGoButtonId = "childGoButton";
     gadgetState.progressIndicatorId = "progressIndicator";
     gadgetState.childSuffix = "_child";
     gadgetState.maxTargetChars = 12;
@@ -87,10 +89,16 @@ function startupInternal()
     document.getElementById(gadgetState.cancelButtonId).noResize = true;
     document.getElementById('resultsScreen').noResize = true;
     document.getElementById('processingScreen').noResize = true;
+    document.getElementById('childrenDiv0').noResize = true;
+    document.getElementById('childrenDiv1').noResize = true;
+    document.getElementById('childrenDiv2').noResize = true;
     
     setVisible(gadgetState.progressIndicatorId, false);
     setVisible(gadgetState.cancelButtonId, false);
     setEnabled(gadgetState.cancelButtonId, false);
+    setVisible('childrenDiv0', false);
+    setVisible('childrenDiv1', false);
+    setVisible('childrenDiv2', false);
     showProcessingScreen();
     showDefaultProcessingText();
 
@@ -99,6 +107,8 @@ function startupInternal()
     setSliceColors(0, gadgetState.childSliceColors[0].color1, gadgetState.childSliceColors[0].color2);
     setSliceColors(1, gadgetState.childSliceColors[1].color1, gadgetState.childSliceColors[1].color2);
     setSliceColors(2, gadgetState.childSliceColors[2].color1, gadgetState.childSliceColors[2].color2);
+
+    if (DEBUG) debug("Startup complete.");
 }
 
 function cancel()
@@ -110,6 +120,12 @@ function cancel()
         gadgetState.timerId = 0;
         setVisible(gadgetState.progressIndicatorId, false);
         showDefaultProcessingText();
+
+        // Clean up right away to avoid holding onto memory we don't need
+        gadgetState.visited = null;
+        gadgetState.visited = new Array;
+        gadgetState.numVisited = 0;
+        gadgetState.target = null;
     }
 }
 
@@ -358,10 +374,11 @@ function updateTargetResults(pieDivId)
 
     var percentUsedSpaceUsedByFolder = targetSizeBytes / (usedSpaceMB * 1024 * 1024);
 
-    /* FIXME: Use the number of files from the visited[] hash. */
-    updateStats(gadgetState.targetSuffix, gadgetState.maxTargetChars,
+    updateStats(
+        gadgetState.targetSuffix, gadgetState.maxTargetChars,
         gadgetState.target.name, percentUsedSpaceUsedByFolder,
-        gadgetState.tallySizeBytes, gadgetState.numFiles);
+        gadgetState.visited[gadgetState.target.path].size,
+        gadgetState.visited[gadgetState.target.path].numFiles);
 
     var sliceSizes = new Array;
     sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
@@ -399,6 +416,7 @@ function updateChildrenResults(pieDivId)
             debug("#" + x + ": " + sortedChildren[x].path + ": " + sortedChildren[x].size);
         }
     }
+    gadgetState.sortedTargetChildren = sortedChildren;
 
     var numChildren = sortedChildren.length;
     document.getElementById("childrenCount").innerText = (numChildren >= 3 ? 3 : numChildren);
@@ -429,7 +447,19 @@ function updateChildrenResults(pieDivId)
 
         // Fill color swatches, if they exist
         makeColorSwatch(index);
+
+        // Make child visible.
+        setVisible("childrenDiv" + index, true);
+        if (DEBUG) debug("made child visible: " + "childrenDiv" + index);
     }
+
+    var numChildrenToHide = 3 - numChildren;
+    for (var hideIndex = numChildrenToHide; hideIndex > numChildren - 1; hideIndex--)
+    {
+        setVisible("childrenDiv" + hideIndex, false);
+        if (DEBUG) debug("made child hidden: " + "childrenDiv" + hideIndex);
+    }
+
     setSliceColors(0, gadgetState.childSliceColors[0].color1, gadgetState.childSliceColors[0].color2);
     makePieWithSlices(pieDivId, pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100);
@@ -473,23 +503,51 @@ function clearElement(elementId)
 }
 
 /**
+ * Enters a child folder.
+ */
+function childNavigate(childId)
+{
+    var index = new Number(childId).valueOf();
+    var childEntry = System.Shell.itemFromPath(gadgetState.sortedTargetChildren[index].path);
+    debug("in child navigate, entry path=" + childEntry.path);
+    gadgetState.invocationCounter++;
+    gadgetState.target = childEntry;
+    gadgetState.timerId = setTimeout('finishUp()', 0);
+}
+
+/**
  * Completes the process, rendering information and graphics.
  */ 
 function finishUp()
 {
-    showResultsScreen();
-    setVisible(gadgetState.progressIndicatorId, false);
-    setVisible(gadgetState.cancelButtonId, false);
-    setEnabled(gadgetState.cancelButtonId, false);
+    try
+    {
+        showResultsScreen();
+        setVisible(gadgetState.progressIndicatorId, false);
+        setVisible(gadgetState.cancelButtonId, false);
+        setEnabled(gadgetState.cancelButtonId, false);
+    
+        updateTargetResults(gadgetState.targetPieDivId);
+        updateChildrenResults(gadgetState.childrenPieDivId);
+    }
+    catch(error)
+    {
+        var errorText = error.name + ": " + error;
+        if (error.message)
+        {
+            errorText += ": " + error.message;
+        }
+        else if (error.cause)
+        {
+            errorText += ": " + error.cause;
+        }
+        else if (error.description)
+        {
+            errorText += ": " + error.description;
+        }
 
-    updateTargetResults(gadgetState.targetPieDivId);
-    updateChildrenResults(gadgetState.childrenPieDivId);
-
-    // Clean up right away to avoid holding onto memory we don't need
-    gadgetState.visited = null;
-    gadgetState.visited = new Array;
-    gadgetState.numVisited = 0;
-    gadgetState.target = null;
+        if (DEBUG) debug(errorText);
+    }
 }
 
 
@@ -758,4 +816,24 @@ function getEntriesDecreasingOrder(path)
     children.sort(entryCompare);
     children.reverse();
     return children;
+}
+
+function highlightButton(childId)
+{
+    var id = gadgetState.childrenGoButtonId + childId;
+    var element = document.getElementById(id);
+    if (element)
+    {
+        element.style.backgroundImage = 'url("arrow-light.png")'
+    }
+}
+
+function darkenButton(childId)
+{
+    var id = gadgetState.childrenGoButtonId + childId;
+    var element = document.getElementById(id);
+    if (element)
+    {
+        element.style.backgroundImage = 'url("arrow-dark.png")';
+    }
 }
