@@ -76,7 +76,7 @@ function setSliceColors(sliceIndex, c1, c2)
 /**
  * Makes a pie with any number of floating slices.
  *
- * @param elementId     the ID of the container element in which to draw.
+ * @param element       the container element in which to draw.
  *                      IMPORTANT: the element's contents are DISCARDED
  *                      before drawing!!
  *                      IMPORTANT: the container must have accessible and
@@ -107,10 +107,10 @@ function setSliceColors(sliceIndex, c1, c2)
  *                      circumference of the circle.  Large values make the
  *                      drawing smoother at a cost in performance.
  */
-function makePieWithSlices(elementId, centerX, centerY, floatOffset, radius, sliceSizes, pointsInFullCircle)
+function makePieWithSlices(element, centerX, centerY, floatOffset, radius, sliceSizes, pointsInFullCircle)
 {
     // Clear old contents...
-    document.getElementById(elementId).innerHTML = "";
+    element.innerHTML = "";
 
     // Tally slice sizing information
     var totalSliceSize = 0;
@@ -124,7 +124,7 @@ function makePieWithSlices(elementId, centerX, centerY, floatOffset, radius, sli
     var pieAngleWidth = 360 - totalSliceSize;
     if (pieAngleWidth > 0)
     {
-        makeSlice(elementId, centerX, centerY, radius,
+        makeSlice(element, centerX, centerY, radius,
             pieStartAngle, pieAngleWidth, pointsInFullCircle,
             pieGlobals.pieColor1, pieGlobals.pieColor2, 180);
     }
@@ -147,7 +147,7 @@ function makePieWithSlices(elementId, centerX, centerY, floatOffset, radius, sli
             var color1 = pieGlobals.sliceColors[index % pieGlobals.sliceColors.length].color1;
             var color2 = pieGlobals.sliceColors[index % pieGlobals.sliceColors.length].color2;
 
-            makeSlice(elementId,
+            makeSlice(element,
                 Math.round(centerX + offsetX),
                 Math.round(centerY - offsetY),
                 radius, sliceStartAngle, sliceSize, pointsInFullCircle,
@@ -160,7 +160,7 @@ function makePieWithSlices(elementId, centerX, centerY, floatOffset, radius, sli
 /**
  * Adds a slice section to the specified element.
  *
- * @param elementId     the ID of the container element in which to draw.
+ * @param element       the container element in which to draw.
  * @param centerX       the location, relative to the top-left corner of the
  *                      container element, at which to center the pie
  * @param centerY       the location, relative to the top-left corner of the
@@ -182,7 +182,7 @@ function makePieWithSlices(elementId, centerX, centerY, floatOffset, radius, sli
  * @param color2        the second color for the gradient
  * @param fillAngle     the angle through which the gradient is rotated
  */
-function makeSlice(elementId, centerX, centerY, radius, startAngle, angleWidth, pointsInFullCircle, color1, color2, fillAngle)
+function makeSlice(element, centerX, centerY, radius, startAngle, angleWidth, pointsInFullCircle, color1, color2, fillAngle)
 {
     var pixelCenterX = centerX;
     var pixelCenterY = centerY;
@@ -191,7 +191,6 @@ function makeSlice(elementId, centerX, centerY, radius, startAngle, angleWidth, 
     centerX = pieGlobals.pieCoordinateSize / 2;
     centerY = pieGlobals.pieCoordinateSize / 2;
     radius = pieGlobals.pieCoordinateSize / 2;
-    var element = document.getElementById(elementId);
     var xPoints = new Array;
     var yPoints = new Array;
     var percentFull = angleWidth / 360;
