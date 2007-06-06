@@ -94,7 +94,7 @@ function startupInternal()
     document.getElementById('childrenDiv2').noResize = true;
     document.getElementById('parentGoButton').noResize = true;
     document.getElementById(gadgetState.progressIndicatorId).noResize = true;
-    
+
     setVisible(gadgetState.progressIndicatorId, false);
     setVisible(gadgetState.cancelButtonId, false);
     setEnabled(gadgetState.cancelButtonId, false);
@@ -112,6 +112,98 @@ function startupInternal()
     setSliceColors(2, gadgetState.childSliceColors[2].color1, gadgetState.childSliceColors[2].color2);
 
     if (DEBUG) debug("Startup complete.");
+}
+
+function showAnalysisFlyout()
+{
+    System.Gadget.Flyout.file =  'analysisFlyout.html';
+    System.Gadget.Flyout.show = true;
+}
+
+function hideAnalysisFlyout()
+{
+    System.Gadget.Flyout.show = false;
+}
+
+function flyoutLoaded()
+{
+    try
+    {
+        flyoutLoadedInternal();
+    }
+    catch(error)
+    {
+        var errorText = error.name + ": " + error;
+        if (error.message)
+        {
+            errorText += ": " + error.message;
+        }
+        else if (error.cause)
+        {
+            errorText += ": " + error.cause;
+        }
+        else if (error.description)
+        {
+            errorText += ": " + error.description;
+        }
+
+        if (DEBUG) debug(errorText);
+    }
+}
+
+function flyoutLoadedInternal()
+{
+    var element = System.Gadget.Flyout.document.getElementById('content');
+    if (element)
+    {
+        // Clear any old contents.
+        while(element.children && element.children.length > 0)
+        {
+            element.removeChild(element.children(0));
+        }
+
+        // Create new element to hold the parent.
+        createParentResultContainer(System.Gadget.Flyout.document, element);
+        updateFlyoutTargetResults(element);
+    }
+}
+
+function createParentResultContainer(containerDocument, containerElement)
+{
+    var contentDiv = containerDocument.createElement("div");
+    var pieDiv = containerDocument.createElement("div");
+    var textDiv = containerDocument.createElement("div");
+    var locationSpan = containerDocument.createElement("span");
+    var sizeSpan = containerDocument.createElement("span");
+    var fileCountSpan = containerDocument.createElement("span");
+
+    contentDiv.className='mainEntry';
+    pieDiv.className='mainEntryPie';
+    textDiv.className='mainEntryText';
+    locationSpan.className='mainEntryLocation';
+    sizeSpan.className='mainEntrySize';
+    fileCountSpan.className='mainEntryFileCount';
+
+    // Assemble in reverse order
+    textDiv.appendChild(locationSpan);
+    textDiv.appendChild(containerDocument.createElement("br"));
+    textDiv.appendChild(sizeSpan);
+    textDiv.appendChild(containerDocument.createElement("br"));
+    textDiv.appendChild(fileCountSpan);
+    contentDiv.appendChild(pieDiv);
+    contentDiv.appendChild(textDiv);
+
+    // Set elements as attributes, for easy access
+    containerElement.folderslice = new Object;
+    containerElement.folderslice.contentDiv = contentDiv;
+    containerElement.folderslice.pieDiv = pieDiv;
+    containerElement.folderslice.textDiv = textDiv;
+    containerElement.folderslice.locationSpan = locationSpan;
+    containerElement.folderslice.sizeSpan = sizeSpan;
+    containerElement.folderslice.fileCountSpan = fileCountSpan;
+
+    // Attach to container.
+    containerElement.appendChild(contentDiv);
 }
 
 function cancel()
@@ -351,11 +443,45 @@ function updateStats(idSuffix, maxFolderChars, folderName, percent, sizeBytes, n
     }
 }
 
+function updateFlyoutStats(flyoutElement, maxFolderChars, folderName, percent, sizeBytes, numFiles)
+{
+    var formattedPercent = (percent < 0.1 ? "0" : "") + (percent * 100).toFixed(1);
+    var formattedSize = formatSizeNice(sizeBytes);
+
+    var element = flyoutElement.folderslice.locationSpan;
+    if (element)
+    {
+        element.innerText = "Folder: " + folderName;
+    }
+
+    element = flyoutElement.folderslice.sizeSpan;
+    if (element)
+    {
+        element.innerText = "Represents " + formattedPercent + "% of used space on the device (" + formattedSize + ")";
+    }
+
+    element = flyoutElement.folderslice.fileCountSpan;
+    if (element)
+    {
+        element.innerText = numFiles + " files";
+    }
+}
+
+
 function updateTargetResults(pieDivId)
 {
-    var mainDiv = document.getElementById(pieDivId);
-    var fullWidth = mainDiv.style.pixelWidth;
-    var fullHeight = mainDiv.style.pixelHeight;
+    updateTargetResultsInternal(false, document.getElementById(pieDivId), undefined);
+}
+
+function updateFlyoutTargetResults(flyoutElement)
+{
+    updateTargetResultsInternal(true, flyoutElement.folderslice.pieDiv, flyoutElement);
+}
+
+function updateTargetResultsInternal(isFlyout, pieDiv, flyoutElement)
+{
+    var fullWidth = pieDiv.offsetWidth; // IE-specific alternative to pixelWidth
+    var fullHeight = pieDiv.offsetHeight; // IE-specific alternative to pixelHeight
     var centerX = fullWidth / 2;
     var centerY = fullHeight / 2;
     var smallestDimension = fullHeight;
@@ -366,6 +492,7 @@ function updateTargetResults(pieDivId)
 
     var pieWidth = smallestDimension;
     var pieHeight = pieWidth;
+
     var sliceOffset = 3;
     var pieRadius = (smallestDimension / 2) - (sliceOffset * 2);
     var pieX = centerX;
@@ -381,25 +508,40 @@ function updateTargetResults(pieDivId)
 
     var percentUsedSpaceUsedByFolder = targetSizeBytes / (usedSpaceMB * 1024 * 1024);
 
-    updateStats(
-        gadgetState.targetSuffix, gadgetState.maxTargetChars,
-        gadgetState.target.name, percentUsedSpaceUsedByFolder,
-        gadgetState.visited[gadgetState.target.path].size,
-        gadgetState.visited[gadgetState.target.path].numFiles);
+    if (!isFlyout)
+    {
+        updateStats(
+            gadgetState.targetSuffix, gadgetState.maxTargetChars,
+            gadgetState.target.name, percentUsedSpaceUsedByFolder,
+            gadgetState.visited[gadgetState.target.path].size,
+            gadgetState.visited[gadgetState.target.path].numFiles);
+    }
+    else
+    {
+        updateFlyoutStats(
+            flyoutElement,
+            0,
+            gadgetState.target.path, percentUsedSpaceUsedByFolder,
+            gadgetState.visited[gadgetState.target.path].size,
+            gadgetState.visited[gadgetState.target.path].numFiles);
+    }
 
     var sliceSizes = new Array;
     sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
     setSliceColors(0, gadgetState.targetSliceColors.color1, gadgetState.targetSliceColors.color2);
-    makePieWithSlices(pieDivId, pieX, pieY, sliceOffset, pieRadius,
+    makePieWithSlices(pieDiv, pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100);
 }
 
-
 function updateChildrenResults(pieDivId)
 {
-    var mainDiv = document.getElementById(pieDivId);
-    var fullWidth = mainDiv.style.pixelWidth;
-    var fullHeight = mainDiv.style.pixelHeight;
+    updateChildrenResultsInternal(false, document.getElementById(pieDivId), undefined);
+}
+
+function updateChildrenResultsInternal(isFlyout, pieDiv, flyoutElement)
+{
+    var fullWidth = pieDiv.offsetWidth; // IE-specific alternative to pixelWidth
+    var fullHeight = pieDiv.offsetHeight; // IE-specific alternative to pixelHeight
     var centerX = fullWidth / 2;
     var centerY = fullHeight / 2;
     var smallestDimension = fullHeight;
@@ -468,7 +610,7 @@ function updateChildrenResults(pieDivId)
     }
 
     setSliceColors(0, gadgetState.childSliceColors[0].color1, gadgetState.childSliceColors[0].color2);
-    makePieWithSlices(pieDivId, pieX, pieY, sliceOffset, pieRadius,
+    makePieWithSlices(pieDiv, pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100);
 }
 
