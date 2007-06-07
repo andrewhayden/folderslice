@@ -84,6 +84,7 @@ function startupInternal()
     gadgetState.childSliceColors[2] = new Object;
     gadgetState.childSliceColors[2].color1 = "#0000ff";
     gadgetState.childSliceColors[2].color2 = "#000040";
+    gadgetState.flyoutButtonCounter = 0;
 
     // Show defaults.
     document.getElementById(gadgetState.cancelButtonId).noResize = true;
@@ -165,7 +166,88 @@ function flyoutLoadedInternal()
         // Create new element to hold the parent.
         createParentResultContainer(System.Gadget.Flyout.document, element);
         updateFlyoutTargetResults(element);
+
+        // TODO: summary element for children...
+
+        // Update child entries
+        updateFlyoutChildrenResults(element);
     }
+}
+
+function createChildResultContainer(containerDocument, containerElement)
+{
+    var contentDiv = containerDocument.createElement("div");
+    var swatchDiv = containerDocument.createElement("div");
+    var textDiv = containerDocument.createElement("div");
+    var locationSpan = containerDocument.createElement("span");
+    var sizeSpan = containerDocument.createElement("span");
+    var fileCountSpan = containerDocument.createElement("span");
+    var navigationDiv = containerDocument.createElement("div");
+    var navigationArrowAction = containerDocument.createElement("span");
+    var navigationArrowLink = containerDocument.createElement("a");
+    var navigationLinkText = containerDocument.createTextNode("");
+
+    // Make color swatch
+    var swatchShape = containerDocument.createElement("v:roundrect");
+    swatchShape.style.width = "32px";
+    swatchShape.style.height = "32px";
+    swatchShape.arcSize = "30%";
+    var swatchFill = containerDocument.createElement("v:fill");
+    swatchFill.type="gradient";
+
+    // Assign class
+    contentDiv.className='childEntry';
+    swatchDiv.className='childEntrySwatch';
+    textDiv.className='childEntryText';
+    locationSpan.className='childEntryLocation';
+    sizeSpan.className='childEntrySize';
+    fileCountSpan.className='childEntryFileCount';
+    navigationDiv.className='childEntryNavigation';
+    navigationArrowAction.className='childEntryNavigationAction';
+    navigationArrowLink.className='childEntryNavigationLink';
+    swatchShape.className='childEntrySwatchShape';
+    swatchFill.className='childEntrySwatchFill';
+
+    // Give the button an ID
+    navigationArrowAction.id = "flyoutGoButton" + gadgetState.flyoutButtonCounter;
+    gadgetState.flyoutButtonCounter++;
+    
+    // Assemble in reverse order...
+    swatchShape.appendChild(swatchFill);
+    swatchDiv.appendChild(swatchShape);
+    navigationArrowLink.appendChild(navigationLinkText);
+    navigationDiv.appendChild(navigationArrowAction);
+    navigationDiv.appendChild(navigationArrowLink);
+    textDiv.appendChild(locationSpan);
+    textDiv.appendChild(containerDocument.createElement("br"));
+    textDiv.appendChild(sizeSpan);
+    textDiv.appendChild(containerDocument.createElement("br"));
+    textDiv.appendChild(fileCountSpan);
+    textDiv.appendChild(containerDocument.createElement("br"));
+    textDiv.appendChild(navigationDiv);
+    contentDiv.appendChild(swatchDiv);
+    contentDiv.appendChild(textDiv);
+
+    // Marker metadata
+    containerElement.folderslice = new Object;
+    containerElement.folderslice.isChild = true;
+
+    // Set elements as attributes, for easy access
+    containerElement.folderslice.contentDiv = contentDiv;
+    containerElement.folderslice.swatchDiv = swatchDiv;
+    containerElement.folderslice.swatchShape = swatchShape;
+    containerElement.folderslice.swatchFill = swatchFill;
+    containerElement.folderslice.textDiv = textDiv;
+    containerElement.folderslice.locationSpan = locationSpan;
+    containerElement.folderslice.sizeSpan = sizeSpan;
+    containerElement.folderslice.fileCountSpan = fileCountSpan;
+    containerElement.folderslice.navigationDiv = navigationDiv;
+    containerElement.folderslice.navigationArrowAction = navigationArrowAction;
+    containerElement.folderslice.navigationArrowLink = navigationArrowLink;
+    containerElement.folderslice.navigationLinkText = navigationLinkText;
+
+    // Attach to container.
+    containerElement.appendChild(contentDiv);
 }
 
 function createParentResultContainer(containerDocument, containerElement)
@@ -193,8 +275,11 @@ function createParentResultContainer(containerDocument, containerElement)
     contentDiv.appendChild(pieDiv);
     contentDiv.appendChild(textDiv);
 
-    // Set elements as attributes, for easy access
+    // Marker metadata
     containerElement.folderslice = new Object;
+    containerElement.folderslice.isChild = false;
+
+    // Set elements as attributes, for easy access
     containerElement.folderslice.contentDiv = contentDiv;
     containerElement.folderslice.pieDiv = pieDiv;
     containerElement.folderslice.textDiv = textDiv;
@@ -443,7 +528,7 @@ function updateStats(idSuffix, maxFolderChars, folderName, percent, sizeBytes, n
     }
 }
 
-function updateFlyoutStats(flyoutElement, maxFolderChars, folderName, percent, sizeBytes, numFiles)
+function updateFlyoutStats(flyoutElement, folderLocation, percent, sizeBytes, numFiles)
 {
     var formattedPercent = (percent < 0.1 ? "0" : "") + (percent * 100).toFixed(1);
     var formattedSize = formatSizeNice(sizeBytes);
@@ -451,13 +536,20 @@ function updateFlyoutStats(flyoutElement, maxFolderChars, folderName, percent, s
     var element = flyoutElement.folderslice.locationSpan;
     if (element)
     {
-        element.innerText = "Folder: " + folderName;
+        element.innerText = "Folder: " + folderLocation;
     }
 
     element = flyoutElement.folderslice.sizeSpan;
     if (element)
     {
-        element.innerText = "Represents " + formattedPercent + "% of used space on the device (" + formattedSize + ")";
+        if (flyoutElement.folderslice.isChild)
+        {
+            element.innerText = "Contains " + formattedPercent + "% of the parent folder's space";
+        }
+        else
+        {
+            element.innerText = "Contains " + formattedPercent + "% of all space used on drive " + getDriveLetter(folderLocation);
+        }
     }
 
     element = flyoutElement.folderslice.fileCountSpan;
@@ -465,8 +557,66 @@ function updateFlyoutStats(flyoutElement, maxFolderChars, folderName, percent, s
     {
         element.innerText = numFiles + " files";
     }
+
+    if (flyoutElement.folderslice.isChild)
+    {
+        // Special child entry processing!
+        // The path that will be passed back in calls cannot contain any "\"
+        // characters.  This appears to be a problem with IE7's JS VM, unless
+        // I am missing something.  So, we swap "\" with "/" in our paths...
+        // If someone wants to correct my errors, I'd be happy to know
+        // what I am doing wrong...
+        var bakedPath = hackPathForCall(folderLocation);
+
+        element = flyoutElement.folderslice.swatchFill;
+        if (element)
+        {
+            // FIXME: set colors up appropriately.
+            element.color=gadgetState.childSliceColors[0].color1;
+            element.color2=gadgetState.childSliceColors[0].color2;
+        }
+
+        element = flyoutElement.folderslice.navigationArrowAction;
+        if (element)
+        {
+            // Set on-click
+            element.onclick=new Function("flyoutNavigate('" + bakedPath + "');");
+        }
+
+        element = flyoutElement.folderslice.navigationArrowLink;
+        if (element)
+        {
+            element.href="javascript:flyoutNavigate('" + bakedPath + "');";
+        }
+
+        element = flyoutElement.folderslice.navigationLinkText;
+        if (element)
+        {
+            element.data="Step into this folder...";
+        }
+    }
 }
 
+function hackPathFromCall(path)
+{
+    return path.replace(/\057/g, "\\");
+}
+
+function hackPathForCall(path)
+{
+    // As far as I can tell, no matter how you try to use string.replace,
+    // you cannot get anything with backslashes into a dynamically-generated
+    // javascript call.  I tried up to 12 backslashes of escaping, with
+    // nothing but failure.
+    // There is probably a bug in IE7 JS VM implementation.
+    // So, we'll use an illegal character as a workaround.
+    return path.replace(/\\/g, "/");
+}
+
+function flyoutNavigate(folderLocation)
+{
+    if (DEBUG) debug("navigate to " + folderLocation);
+}
 
 function updateTargetResults(pieDivId)
 {
@@ -520,7 +670,6 @@ function updateTargetResultsInternal(isFlyout, pieDiv, flyoutElement)
     {
         updateFlyoutStats(
             flyoutElement,
-            0,
             gadgetState.target.path, percentUsedSpaceUsedByFolder,
             gadgetState.visited[gadgetState.target.path].size,
             gadgetState.visited[gadgetState.target.path].numFiles);
@@ -536,6 +685,26 @@ function updateTargetResultsInternal(isFlyout, pieDiv, flyoutElement)
 function updateChildrenResults(pieDivId)
 {
     updateChildrenResultsInternal(false, document.getElementById(pieDivId), undefined);
+}
+
+function updateFlyoutChildrenResults(element)
+{
+    // Fill in children.
+    var sortedChildren = gadgetState.sortedTargetChildren;
+    var numChildren = sortedChildren.length;
+    var targetSizeBytes = gadgetState.tallySizeBytes;
+    var sliceSizes = new Array;
+    for (var index=0; index<numChildren; index++)
+    {
+        var percentSpaceFromParent = sortedChildren[index].size / targetSizeBytes;
+        var childEntry = System.Shell.itemFromPath(sortedChildren[index].path);
+        var childElement = System.Gadget.Flyout.document.createElement("div");
+        createChildResultContainer(System.Gadget.Flyout.document, childElement);
+        
+        updateFlyoutStats(childElement, childEntry.path, percentSpaceFromParent,
+            sortedChildren[index].size, sortedChildren[index].numFiles);
+        element.appendChild(childElement);
+    }
 }
 
 function updateChildrenResultsInternal(isFlyout, pieDiv, flyoutElement)
@@ -687,6 +856,24 @@ function getParent(path)
     }
 }
 
+function getDriveShellItem(path)
+{
+    var indexOfFileSeparator = path.indexOf("\\");
+    if (indexOfFileSeparator > 0)
+    {
+        var newPath = path.substr(0, indexOfFileSeparator);
+        return System.Shell.itemFromPath(newPath);
+    }
+    else
+    {
+        return undefined; // no parent
+    }
+}
+
+function getDriveLetter(path)
+{
+    return path.substr(0, 1);
+}
 
 /**
  * Navigates to the parent of the current folder.
