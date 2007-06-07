@@ -84,7 +84,6 @@ function startupInternal()
     gadgetState.childSliceColors[2] = new Object;
     gadgetState.childSliceColors[2].color1 = "#0000ff";
     gadgetState.childSliceColors[2].color2 = "#000040";
-    gadgetState.flyoutButtonCounter = 0;
 
     // Show defaults.
     document.getElementById(gadgetState.cancelButtonId).noResize = true;
@@ -107,12 +106,29 @@ function startupInternal()
     showDefaultProcessingText();
 
     // Set up default colors
+    setDefaultPieColors;
+
+    // Taste the rainbow, ride the walrus.
+    var rainbow = new Array(0);
+    rainbow[0] = "#ff0000";
+    rainbow[1] = "#dd8000";
+    rainbow[2] = "#ffff00";
+    rainbow[3] = "#00ff00";
+    rainbow[4] = "#0000ff";
+    rainbow[5] = "#8000ff";
+    rainbow[6] = "#ff00ff";
+    gadgetState.rainbow = rainbow;
+    gadgetState.rainbowWeights = makeEqualWeightsArray(rainbow);
+
+    if (DEBUG) debug("Startup complete.");
+}
+
+function setDefaultPieColors()
+{
     setPieColors(gadgetState.pieColors.color1, gadgetState.pieColors.color2);
     setSliceColors(0, gadgetState.childSliceColors[0].color1, gadgetState.childSliceColors[0].color2);
     setSliceColors(1, gadgetState.childSliceColors[1].color1, gadgetState.childSliceColors[1].color2);
     setSliceColors(2, gadgetState.childSliceColors[2].color1, gadgetState.childSliceColors[2].color2);
-
-    if (DEBUG) debug("Startup complete.");
 }
 
 function showAnalysisFlyout()
@@ -174,7 +190,7 @@ function flyoutLoadedInternal()
     }
 }
 
-function createChildResultContainer(containerDocument, containerElement)
+function createChildResultContainer(containerDocument, containerElement, childIndex, numChildren)
 {
     var contentDiv = containerDocument.createElement("div");
     var swatchDiv = containerDocument.createElement("div");
@@ -209,8 +225,7 @@ function createChildResultContainer(containerDocument, containerElement)
     swatchFill.className='childEntrySwatchFill';
 
     // Give the button an ID
-    navigationArrowAction.id = "flyoutGoButton" + gadgetState.flyoutButtonCounter;
-    gadgetState.flyoutButtonCounter++;
+    contentDiv.id = "childEntry" + childIndex;
     
     // Assemble in reverse order...
     swatchShape.appendChild(swatchFill);
@@ -528,7 +543,7 @@ function updateStats(idSuffix, maxFolderChars, folderName, percent, sizeBytes, n
     }
 }
 
-function updateFlyoutStats(flyoutElement, folderLocation, percent, sizeBytes, numFiles)
+function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocation, percent, sizeBytes, numFiles)
 {
     var formattedPercent = (percent < 0.1 ? "0" : "") + (percent * 100).toFixed(1);
     var formattedSize = formatSizeNice(sizeBytes);
@@ -571,9 +586,13 @@ function updateFlyoutStats(flyoutElement, folderLocation, percent, sizeBytes, nu
         element = flyoutElement.folderslice.swatchFill;
         if (element)
         {
-            // FIXME: set colors up appropriately.
-            element.color=gadgetState.childSliceColors[0].color1;
-            element.color2=gadgetState.childSliceColors[0].color2;
+            var increment = 1 / numChildren;
+            var childIndexAsPercent = (childIndex === 0 ? 0 : childIndex / numChildren);
+            var color1 = linearArrayInterpolateFromHex(gadgetState.rainbow, gadgetState.rainbowWeights, childIndexAsPercent);
+            var color2 = linearArrayInterpolateFromHex(gadgetState.rainbow, gadgetState.rainbowWeights, childIndexAsPercent + increment);
+            element.color = color1;
+            element.color2 = color2;
+            setSliceColors(childIndex, color1, color2);
         }
 
         element = flyoutElement.folderslice.navigationArrowAction;
@@ -669,7 +688,7 @@ function updateTargetResultsInternal(isFlyout, pieDiv, flyoutElement)
     else
     {
         updateFlyoutStats(
-            flyoutElement,
+            flyoutElement, 0, 0,
             gadgetState.target.path, percentUsedSpaceUsedByFolder,
             gadgetState.visited[gadgetState.target.path].size,
             gadgetState.visited[gadgetState.target.path].numFiles);
@@ -699,12 +718,19 @@ function updateFlyoutChildrenResults(element)
         var percentSpaceFromParent = sortedChildren[index].size / targetSizeBytes;
         var childEntry = System.Shell.itemFromPath(sortedChildren[index].path);
         var childElement = System.Gadget.Flyout.document.createElement("div");
-        createChildResultContainer(System.Gadget.Flyout.document, childElement);
+        createChildResultContainer(
+            System.Gadget.Flyout.document, childElement,
+            index, numChildren);
         
-        updateFlyoutStats(childElement, childEntry.path, percentSpaceFromParent,
+        updateFlyoutStats(childElement, index, numChildren,
+            childEntry.name, percentSpaceFromParent,
             sortedChildren[index].size, sortedChildren[index].numFiles);
         element.appendChild(childElement);
     }
+
+    //makePieWithSlices(pieDiv, pieX, pieY, sliceOffset, pieRadius,
+    //    sliceSizes, 100);
+
 }
 
 function updateChildrenResultsInternal(isFlyout, pieDiv, flyoutElement)
@@ -778,7 +804,7 @@ function updateChildrenResultsInternal(isFlyout, pieDiv, flyoutElement)
         if (DEBUG) debug("made child hidden: " + "childrenDiv" + hideIndex);
     }
 
-    setSliceColors(0, gadgetState.childSliceColors[0].color1, gadgetState.childSliceColors[0].color2);
+    setDefaultPieColors();
     makePieWithSlices(pieDiv, pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100);
 }
