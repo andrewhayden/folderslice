@@ -29,7 +29,6 @@
             float: left;
             width: 80px;
             height: 60px;
-            border: 1px solid red;
         }
 
         div.childEntrySwatch
@@ -41,6 +40,12 @@
             top: 14px;
         }
         
+        *.childEntrySwatchShape
+        {
+            width: 32px;
+            height: 32px;
+        }
+
         div.mainEntryText, div.childEntryText;, div.childSummaryText
         {
             float: right;
@@ -48,7 +53,6 @@
             height: 60px;
             overflow: hidden;
             white-space: nowrap;
-            /* border: 1px solid green; */
         }
 
         *.childEntryNavigationAction
@@ -67,13 +71,22 @@
             width: 300px;
             overflow: hidden;
             white-space: nowrap;
-            /* height: 26px; */
-            /* border: 1px solid blue; */
         }
 
         div.parentWrapper
         {
-            border: 1px solid green;
+            width: 400px;
+            height: 60px;
+        }
+
+        div.summaryWrapper
+        {
+            width: 400px;
+            height: 60px;
+        }
+
+        div.childWrapper
+        {
             width: 400px;
             height: 60px;
         }
@@ -86,7 +99,6 @@
 
     function flyoutNavigate(path)
     {
-        System.Gadget.document.parentWindow.debug("flyout navigate to " + path);
         System.Gadget.document.parentWindow.flyoutNavigate(path);
     }
     </script>
