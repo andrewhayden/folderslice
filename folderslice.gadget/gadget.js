@@ -265,9 +265,7 @@ function createChildResultContainer(containerDocument, containerElement, childIn
 
     // Make color swatch
     var swatchShape = containerDocument.createElement("v:roundrect");
-    swatchShape.style.width = "32px";
-    swatchShape.style.height = "32px";
-    swatchShape.arcSize = "30%";
+    swatchShape.arcSize = "25%";
     var swatchFill = containerDocument.createElement("v:fill");
     swatchFill.type="gradient";
 
@@ -604,7 +602,7 @@ function updateStats(idSuffix, maxFolderChars, folderName, percent, sizeBytes, n
     }
 }
 
-function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocation, percent, sizeBytes, numFiles, color1, color2)
+function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocation, folderName, percent, sizeBytes, numFiles, color1, color2)
 {
     var formattedPercent = (percent < 0.1 ? "0" : "") + (percent * 100).toFixed(1);
     var formattedSize = formatSizeNice(sizeBytes);
@@ -612,7 +610,7 @@ function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocatio
     var element = flyoutElement.folderslice.locationSpan;
     if (element)
     {
-        element.innerText = "Folder: " + folderLocation;
+        element.innerText = "Folder: " + folderName;
     }
 
     element = flyoutElement.folderslice.sizeSpan;
@@ -692,7 +690,21 @@ function hackPathForCall(path)
 
 function flyoutNavigate(folderLocation)
 {
-    if (DEBUG) debug("navigate to " + folderLocation);
+    var bakedPath = hackPathFromCall(folderLocation);
+    var entry = System.Shell.itemFromPath(bakedPath);
+    if (DEBUG) debug("flyout navigating to... " + bakedPath);
+     // If we have visited the location already, we can just display results;
+    // Otherwise, we have to do a full parse.
+    if (gadgetState.visited[bakedPath])
+    {
+        gadgetState.invocationCounter++;
+        gadgetState.target = entry;
+        gadgetState.timerId = setTimeout('finishUp()', 0);
+    }
+    else
+    {
+        kickOff(entry);
+    }
 }
 
 function updateTargetResults(pieDivId)
@@ -755,7 +767,8 @@ function updateTargetResultsInternal(isFlyout, pieDiv, flyoutElement)
     {
         updateFlyoutStats(
             flyoutElement, 0, 0,
-            gadgetState.target.path, percentUsedSpaceUsedByFolder,
+            gadgetState.target.path, gadgetState.target.name,
+            percentUsedSpaceUsedByFolder,
             gadgetState.visited[gadgetState.target.path].size,
             gadgetState.visited[gadgetState.target.path].numFiles,
             gadgetState.pieColors.color1,
@@ -791,7 +804,7 @@ function updateFlyoutChildrenResults(element, sliceSizes, sliceColors)
             index, numChildren);
         
         updateFlyoutStats(childElement, index, numChildren,
-            childEntry.name, sliceSizes[index],
+            childEntry.path, childEntry.name, sliceSizes[index],
             sortedChildren[index].size, sortedChildren[index].numFiles,
             sliceColors[index].color1,
             sliceColors[index].color2);
@@ -1043,9 +1056,13 @@ function finishUp()
         setVisible(gadgetState.progressIndicatorId, false);
         setVisible(gadgetState.cancelButtonId, false);
         setEnabled(gadgetState.cancelButtonId, false);
-    
+
         updateTargetResults(gadgetState.targetPieDivId);
         updateChildrenResults(gadgetState.childrenPieDivId);
+        if (System.Gadget.Flyout.show)
+        {
+            flyoutLoadedInternal();
+        }
     }
     catch(error)
     {
