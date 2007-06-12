@@ -71,9 +71,6 @@ function startupInternal()
     gadgetState.pieColors = new Object;
     gadgetState.pieColors.color1 = "#a0a0a0";
     gadgetState.pieColors.color2 = "#333333";
-    gadgetState.targetSliceColors = new Object;
-    gadgetState.targetSliceColors.color1 = "#ffffff";
-    gadgetState.targetSliceColors.color2 = "#a0a0a0";
     gadgetState.childSliceColors = new Array(0);
     gadgetState.childSliceColors[0] = new Object;
     gadgetState.childSliceColors[0].color1 = "#ff0000";
@@ -105,9 +102,6 @@ function startupInternal()
     showProcessingScreen();
     showDefaultProcessingText();
 
-    // Set up default colors
-    setDefaultPieColors;
-
     // Taste the rainbow, ride the walrus.
     var rainbow = new Array(0);
     rainbow[0] = "#ff0000";
@@ -119,16 +113,9 @@ function startupInternal()
     rainbow[6] = "#ff00ff";
     gadgetState.rainbow = rainbow;
     gadgetState.rainbowWeights = makeEqualWeightsArray(rainbow);
+    gadgetState.rainbow.childColors = new Array(0);
 
     if (DEBUG) debug("Startup complete.");
-}
-
-function setDefaultPieColors()
-{
-    setPieColors(gadgetState.pieColors.color1, gadgetState.pieColors.color2);
-    setSliceColors(0, gadgetState.childSliceColors[0].color1, gadgetState.childSliceColors[0].color2);
-    setSliceColors(1, gadgetState.childSliceColors[1].color1, gadgetState.childSliceColors[1].color2);
-    setSliceColors(2, gadgetState.childSliceColors[2].color1, gadgetState.childSliceColors[2].color2);
 }
 
 function showAnalysisFlyout()
@@ -180,14 +167,87 @@ function flyoutLoadedInternal()
         }
 
         // Create new element to hold the parent.
-        createParentResultContainer(System.Gadget.Flyout.document, element);
-        updateFlyoutTargetResults(element);
+        var parentWrapper = System.Gadget.Flyout.document.createElement("div");
+        parentWrapper.className='parentWrapper';
+        createParentResultContainer(System.Gadget.Flyout.document, parentWrapper);
 
-        // TODO: summary element for children...
+        // Create new element to hold summary.
+        var summaryWrapper = System.Gadget.Flyout.document.createElement("div");
+        summaryWrapper.className='summaryWrapper';
+        createChildSummaryContainer(System.Gadget.Flyout.document, summaryWrapper);
 
-        // Update child entries
-        updateFlyoutChildrenResults(element);
+        // Create new element to hold children.
+        var childWrapper = System.Gadget.Flyout.document.createElement("div");
+        childWrapper.className='childWrapper';
+
+        // Add everything in.
+        element.appendChild(parentWrapper);
+        element.appendChild(summaryWrapper);
+        element.appendChild(childWrapper);
+
+        // Figure out sizes and colors.
+        var sortedChildren = gadgetState.sortedTargetChildren;
+        var numChildren = sortedChildren.length;
+        var targetSizeBytes = gadgetState.visited[gadgetState.target.path].size;
+        var increment = 1 / numChildren;
+        var childSizesDegrees = new Array(0);
+        var childSizesPercents = new Array(0);
+        var childColors = new Array(0);
+
+        for (var index=0; index<numChildren; index++)
+        {
+            childSizesPercents[index] = sortedChildren[index].size / targetSizeBytes;
+            childSizesDegrees[index] = 360* (sortedChildren[index].size / targetSizeBytes);
+            var childIndexAsPercent = (index === 0 ? 0 : index / numChildren);
+            childColors[index] = new Object;
+            childColors[index].color1 = linearArrayInterpolateFromHex(
+                gadgetState.rainbow, gadgetState.rainbowWeights, childIndexAsPercent);
+            childColors[index].color2 = linearArrayInterpolateFromHex(
+                gadgetState.rainbow, gadgetState.rainbowWeights, childIndexAsPercent + increment);
+        }
+
+        // We must do the actual content updates last in order for all layout
+        // information to be available to javascript.
+        updateFlyoutTargetResults(parentWrapper);
+        updateFlyoutSummaryResults(summaryWrapper, childSizesDegrees, childColors);
+        updateFlyoutChildrenResults(childWrapper, childSizesPercents, childColors);
     }
+}
+
+function createChildSummaryContainer(containerDocument, containerElement)
+{
+    var contentDiv = containerDocument.createElement("div");
+    var pieDiv = containerDocument.createElement("div");
+    var textDiv = containerDocument.createElement("div");
+    var titleSpan = containerDocument.createElement("span");
+    var detailsSpan = containerDocument.createElement("span");
+
+    // Assign class
+    contentDiv.className='childSummary';
+    pieDiv.className='childSummaryPie';
+    textDiv.className='childSummaryText';
+    titleSpan.className='childSummaryTitle';
+    detailsSpan.className='childSummaryDetails';
+
+    // Assemble in reverse order...
+    textDiv.appendChild(titleSpan);
+    textDiv.appendChild(detailsSpan);
+    contentDiv.appendChild(pieDiv);
+    contentDiv.appendChild(textDiv);
+
+    // Marker metadata
+    containerElement.folderslice = new Object;
+    containerElement.folderslice.isChild = true;
+
+    // Set elements as attributes, for easy access
+    containerElement.folderslice.contentDiv = contentDiv;
+    containerElement.folderslice.textDiv = textDiv;
+    containerElement.folderslice.pieDiv = pieDiv;
+    containerElement.folderslice.titleSpan = titleSpan;
+    containerElement.folderslice.detailsSpan = detailsSpan;
+
+    // Attach to container.
+    containerElement.appendChild(contentDiv);
 }
 
 function createChildResultContainer(containerDocument, containerElement, childIndex, numChildren)
@@ -458,6 +518,7 @@ function runloopDebug(invocationCounter)
  */
 function kickOff(droppedItem)
 {
+    hideAnalysisFlyout();
     var target;
     if (droppedItem.isLink)
     {
@@ -543,7 +604,7 @@ function updateStats(idSuffix, maxFolderChars, folderName, percent, sizeBytes, n
     }
 }
 
-function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocation, percent, sizeBytes, numFiles)
+function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocation, percent, sizeBytes, numFiles, color1, color2)
 {
     var formattedPercent = (percent < 0.1 ? "0" : "") + (percent * 100).toFixed(1);
     var formattedSize = formatSizeNice(sizeBytes);
@@ -588,11 +649,8 @@ function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocatio
         {
             var increment = 1 / numChildren;
             var childIndexAsPercent = (childIndex === 0 ? 0 : childIndex / numChildren);
-            var color1 = linearArrayInterpolateFromHex(gadgetState.rainbow, gadgetState.rainbowWeights, childIndexAsPercent);
-            var color2 = linearArrayInterpolateFromHex(gadgetState.rainbow, gadgetState.rainbowWeights, childIndexAsPercent + increment);
             element.color = color1;
             element.color2 = color2;
-            setSliceColors(childIndex, color1, color2);
         }
 
         element = flyoutElement.folderslice.navigationArrowAction;
@@ -649,8 +707,16 @@ function updateFlyoutTargetResults(flyoutElement)
 
 function updateTargetResultsInternal(isFlyout, pieDiv, flyoutElement)
 {
+    // NOTE!  OffsetWidth/Height can only be accessed *AFTER* the element has been added to the page!
     var fullWidth = pieDiv.offsetWidth; // IE-specific alternative to pixelWidth
     var fullHeight = pieDiv.offsetHeight; // IE-specific alternative to pixelHeight
+    if (fullWidth === 0 && fullHeight === 0)
+    {
+        if (DEBUG) debug("height and width of pie are 0; trying alternative");
+        fullWidth = pieDiv.style.pixelWidth;
+        fullHeight = pieDiv.style.pixelHeight;
+    }
+
     var centerX = fullWidth / 2;
     var centerY = fullHeight / 2;
     var smallestDimension = fullHeight;
@@ -691,14 +757,18 @@ function updateTargetResultsInternal(isFlyout, pieDiv, flyoutElement)
             flyoutElement, 0, 0,
             gadgetState.target.path, percentUsedSpaceUsedByFolder,
             gadgetState.visited[gadgetState.target.path].size,
-            gadgetState.visited[gadgetState.target.path].numFiles);
+            gadgetState.visited[gadgetState.target.path].numFiles,
+            gadgetState.pieColors.color1,
+            gadgetState.pieColors.color2);
     }
 
     var sliceSizes = new Array;
     sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
-    setSliceColors(0, gadgetState.targetSliceColors.color1, gadgetState.targetSliceColors.color2);
     makePieWithSlices(pieDiv, pieX, pieY, sliceOffset, pieRadius,
-        sliceSizes, 100);
+        sliceSizes, 100,
+        gadgetState.pieColors.color1,
+        gadgetState.pieColors.color2,
+        gadgetState.childSliceColors);
 }
 
 function updateChildrenResults(pieDivId)
@@ -706,16 +776,14 @@ function updateChildrenResults(pieDivId)
     updateChildrenResultsInternal(false, document.getElementById(pieDivId), undefined);
 }
 
-function updateFlyoutChildrenResults(element)
+function updateFlyoutChildrenResults(element, sliceSizes, sliceColors)
 {
     // Fill in children.
     var sortedChildren = gadgetState.sortedTargetChildren;
     var numChildren = sortedChildren.length;
     var targetSizeBytes = gadgetState.tallySizeBytes;
-    var sliceSizes = new Array;
     for (var index=0; index<numChildren; index++)
     {
-        var percentSpaceFromParent = sortedChildren[index].size / targetSizeBytes;
         var childEntry = System.Shell.itemFromPath(sortedChildren[index].path);
         var childElement = System.Gadget.Flyout.document.createElement("div");
         createChildResultContainer(
@@ -723,14 +791,39 @@ function updateFlyoutChildrenResults(element)
             index, numChildren);
         
         updateFlyoutStats(childElement, index, numChildren,
-            childEntry.name, percentSpaceFromParent,
-            sortedChildren[index].size, sortedChildren[index].numFiles);
+            childEntry.name, sliceSizes[index],
+            sortedChildren[index].size, sortedChildren[index].numFiles,
+            sliceColors[index].color1,
+            sliceColors[index].color2);
         element.appendChild(childElement);
     }
+}
 
-    //makePieWithSlices(pieDiv, pieX, pieY, sliceOffset, pieRadius,
-    //    sliceSizes, 100);
+function updateFlyoutSummaryResults(element, sliceSizes, childColors)
+{
+    // Fill in children.
+    var fullWidth = element.folderslice.pieDiv.offsetWidth; // IE-specific alternative to pixelWidth
+    var fullHeight = element.folderslice.pieDiv.offsetHeight; // IE-specific alternative to pixelHeight
+    var centerX = fullWidth / 2;
+    var centerY = fullHeight / 2;
+    var smallestDimension = fullHeight;
+    if (fullHeight > fullWidth)
+    {
+        smallestDimension = fullWidth;
+    }
 
+    var pieWidth = smallestDimension;
+    var pieHeight = pieWidth;
+    var sliceOffset = 3;
+    var pieRadius = (smallestDimension / 2) - (sliceOffset * 2);
+    var pieX = centerX;
+    var pieY = centerY;
+
+    makePieWithSlices(element.folderslice.pieDiv, pieX, pieY, sliceOffset, pieRadius,
+        sliceSizes, 100,
+        gadgetState.pieColors.color1,
+        gadgetState.pieColors.color2,
+        childColors);
 }
 
 function updateChildrenResultsInternal(isFlyout, pieDiv, flyoutElement)
@@ -804,9 +897,11 @@ function updateChildrenResultsInternal(isFlyout, pieDiv, flyoutElement)
         if (DEBUG) debug("made child hidden: " + "childrenDiv" + hideIndex);
     }
 
-    setDefaultPieColors();
     makePieWithSlices(pieDiv, pieX, pieY, sliceOffset, pieRadius,
-        sliceSizes, 100);
+        sliceSizes, 100,
+        gadgetState.pieColors.color1,
+        gadgetState.pieColors.color2,
+        gadgetState.childSliceColors);
 }
 
 function makeColorSwatch(index)
@@ -1016,7 +1111,7 @@ function tallyFolderSize(invocationCounter)
         return false;
     }
 
-    if (DEBUG) debug("tallyStack.length=" + gadgetState.tallyStack.length);
+    //if (DEBUG) debug("tallyStack.length=" + gadgetState.tallyStack.length);
 
     // If we aren't behind the times, see if there is work to be done.
     if (gadgetState.tallyStack.length === 0)
@@ -1026,7 +1121,7 @@ function tallyFolderSize(invocationCounter)
         return false;
     }
 
-    if (DEBUG) debug("working...");
+    //if (DEBUG) debug("working...");
 
     // Otherwise, there is work to be done.
     var tallyState = gadgetState.tallyStack.pop();
@@ -1063,7 +1158,7 @@ function tallyFolderSize(invocationCounter)
             // Set the timeout to come back here in a little while...
             if (DEBUG)
             {
-                debug("resting for " + gadgetState.restIntervalMillis + "ms");
+                //debug("resting for " + gadgetState.restIntervalMillis + "ms");
                 gadgetState.timerId = setTimeout('runloopDebug(' + invocationCounter + ')', gadgetState.restIntervalMillis);
             }
             else

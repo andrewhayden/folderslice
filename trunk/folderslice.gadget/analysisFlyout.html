@@ -15,7 +15,7 @@
             behavior: url(#default#VML);
         }
 
-        div.mainEntry, div.childEntry
+        div.mainEntry, div.childEntry, div.childSummary
         {
             height: 60px;
             width: 400px;
@@ -24,12 +24,12 @@
             white-space: nowrap;
         }
         
-        div.mainEntryPie, div.childEntrySwatch
+        div.mainEntryPie, div.childEntrySwatch, div.childSummaryPie
         {
             float: left;
             width: 80px;
             height: 60px;
-            /* border: 1px solid red; */
+            border: 1px solid red;
         }
 
         div.childEntrySwatch
@@ -41,7 +41,7 @@
             top: 14px;
         }
         
-        div.mainEntryText, div.childEntryText;
+        div.mainEntryText, div.childEntryText;, div.childSummaryText
         {
             float: right;
             width: 320px;
@@ -57,18 +57,25 @@
             background-repeat: no-repeat;
             width: 16px;
             height: 16px;
-            border: 1px solid red;
         }
 
         span.mainEntryLocation, span.mainEntrySize, span.mainEntryFileCount,
         span.childEntryLocation, span.childEntrySize, span.childEntryFileCount,
-        span.childEntryNavigation
+        span.childEntryNavigation,
+        span.childSummaryTitle, span.childSummaryDetails
         {
             width: 300px;
             overflow: hidden;
             white-space: nowrap;
             /* height: 26px; */
             /* border: 1px solid blue; */
+        }
+
+        div.parentWrapper
+        {
+            border: 1px solid green;
+            width: 400px;
+            height: 60px;
         }
     </style>
     <script language="javascript" type="text/javascript">

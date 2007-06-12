@@ -32,12 +32,6 @@
 // Id: $Id$
 
 var pieGlobals = new Object;
-pieGlobals.pieColor1 = '#ffea3b';
-pieGlobals.pieColor2 = '#c43122';
-pieGlobals.sliceColors = new Array;
-pieGlobals.sliceColors[0] = new Object;
-pieGlobals.sliceColors[0].color1 = '#0055ff';
-pieGlobals.sliceColors[0].color2 = '#000040';
 pieGlobals.pieCoordinateSize = 1000;
 pieGlobals.pieDebug = false; // Set to 'true' to turn on debugging.
 
@@ -49,28 +43,6 @@ pieGlobals.pieDebug = false; // Set to 'true' to turn on debugging.
 function setPieCoordinateSpace(size)
 {
     pieGlobals.pieCoordinateSize = size;
-}
-
-/**
- * Changes the colors used to draw the pie gradient.
- */
-function setPieColors(c1, c2)
-{
-    pieGlobals.pieColor1 = c1;
-    pieGlobals.pieColor2 = c2;
-}
-
-/**
- * Changes the colors used to draw the slice gradient.
- * @param sliceIndex the index of the slice whose color should be set
- * @param c1 color #1
- * @param c2 color #2
- */
-function setSliceColors(sliceIndex, c1, c2)
-{
-    pieGlobals.sliceColors[sliceIndex] = new Object;
-    pieGlobals.sliceColors[sliceIndex].color1 = c1;
-    pieGlobals.sliceColors[sliceIndex].color2 = c2;
 }
 
 /**
@@ -106,8 +78,17 @@ function setSliceColors(sliceIndex, c1, c2)
  *                      interpolate a polygon representation of the full
  *                      circumference of the circle.  Large values make the
  *                      drawing smoother at a cost in performance.
+ * @param pieColor1     first color for the pie (main slice) gradient
+ * @param pieColor2     second color for the pie (main slice) gradient
+ * @param sliceColors   an array of colors, two per slice, that define the
+ *                      starting and ending colors for the gradient; each
+ *                      entry in the array must have attributes "color1"
+ *                      and "color2", and each must be a hexadecimal string
+ *                      in typical HTML format (e.g., '#0000ff' for bright
+ *                      blue).  If there are not enough colors for each slice
+ *                      the colors repeat again from the beginning.
  */
-function makePieWithSlices(element, centerX, centerY, floatOffset, radius, sliceSizes, pointsInFullCircle)
+function makePieWithSlices(element, centerX, centerY, floatOffset, radius, sliceSizes, pointsInFullCircle, pieColor1, pieColor2, sliceColors)
 {
     // Clear old contents...
     element.innerHTML = "";
@@ -126,13 +107,15 @@ function makePieWithSlices(element, centerX, centerY, floatOffset, radius, slice
     {
         makeSlice(element, centerX, centerY, radius,
             pieStartAngle, pieAngleWidth, pointsInFullCircle,
-            pieGlobals.pieColor1, pieGlobals.pieColor2, 180);
+            pieColor1, pieColor2, 180);
     }
 
     var sliceSizeDone = 0;
     for (var index=0; index<sliceSizes.length; index++)
     {
         var sliceSize = sliceSizes[index];
+        var color1 = sliceColors[index % sliceColors.length].color1;
+        var color2 = sliceColors[index % sliceColors.length].color2;
         if (sliceSize != 0)
         {
             // Offset must be scaled in x/y according to sin/cos of the angle...
@@ -142,10 +125,6 @@ function makePieWithSlices(element, centerX, centerY, floatOffset, radius, slice
             var yScale = sinDegrees(sliceCenter);
             var offsetX = xScale * floatOffset;
             var offsetY = yScale * floatOffset;
-            var color1;
-            var color2;
-            var color1 = pieGlobals.sliceColors[index % pieGlobals.sliceColors.length].color1;
-            var color2 = pieGlobals.sliceColors[index % pieGlobals.sliceColors.length].color2;
 
             makeSlice(element,
                 Math.round(centerX + offsetX),
