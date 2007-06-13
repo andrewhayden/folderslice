@@ -166,11 +166,6 @@ function flyoutLoadedInternal()
             element.removeChild(element.children(0));
         }
 
-        // Create new element to hold the parent.
-        var parentWrapper = System.Gadget.Flyout.document.createElement("div");
-        parentWrapper.className='parentWrapper';
-        createParentResultContainer(System.Gadget.Flyout.document, parentWrapper);
-
         // Create new element to hold summary.
         var summaryWrapper = System.Gadget.Flyout.document.createElement("div");
         summaryWrapper.className='summaryWrapper';
@@ -181,7 +176,6 @@ function flyoutLoadedInternal()
         childWrapper.className='childWrapper';
 
         // Add everything in.
-        element.appendChild(parentWrapper);
         element.appendChild(summaryWrapper);
         element.appendChild(childWrapper);
 
@@ -208,7 +202,6 @@ function flyoutLoadedInternal()
 
         // We must do the actual content updates last in order for all layout
         // information to be available to javascript.
-        updateFlyoutTargetResults(parentWrapper);
         updateFlyoutSummaryResults(summaryWrapper, childSizesDegrees, childColors);
         updateFlyoutChildrenResults(childWrapper, childSizesPercents, childColors);
     }
@@ -217,22 +210,33 @@ function flyoutLoadedInternal()
 function createChildSummaryContainer(containerDocument, containerElement)
 {
     var contentDiv = containerDocument.createElement("div");
+    var pieWrapper = containerDocument.createElement("div");
     var pieDiv = containerDocument.createElement("div");
+    var pieDiv2 = containerDocument.createElement("span");
     var textDiv = containerDocument.createElement("div");
     var titleSpan = containerDocument.createElement("span");
     var detailsSpan = containerDocument.createElement("span");
+    var details2Span = containerDocument.createElement("span");
 
     // Assign class
     contentDiv.className='childSummary';
+    pieWrapper.className='childSummaryPieWrapper';
     pieDiv.className='childSummaryPie';
+    pieDiv2.className='childSummaryParentPie';
     textDiv.className='childSummaryText';
     titleSpan.className='childSummaryTitle';
+    detailsSpan.className='childSummaryDetails';
     detailsSpan.className='childSummaryDetails';
 
     // Assemble in reverse order...
     textDiv.appendChild(titleSpan);
+    textDiv.appendChild(containerDocument.createElement("br"));
     textDiv.appendChild(detailsSpan);
-    contentDiv.appendChild(pieDiv);
+    textDiv.appendChild(containerDocument.createElement("br"));
+    textDiv.appendChild(details2Span);
+    pieWrapper.appendChild(pieDiv);
+    pieWrapper.appendChild(pieDiv2);
+    contentDiv.appendChild(pieWrapper);
     contentDiv.appendChild(textDiv);
 
     // Marker metadata
@@ -242,9 +246,12 @@ function createChildSummaryContainer(containerDocument, containerElement)
     // Set elements as attributes, for easy access
     containerElement.folderslice.contentDiv = contentDiv;
     containerElement.folderslice.textDiv = textDiv;
+    containerElement.folderslice.pieWrapper = pieWrapper;
     containerElement.folderslice.pieDiv = pieDiv;
+    containerElement.folderslice.pieDiv2 = pieDiv2;
     containerElement.folderslice.titleSpan = titleSpan;
     containerElement.folderslice.detailsSpan = detailsSpan;
+    containerElement.folderslice.details2Span = details2Span;
 
     // Attach to container.
     containerElement.appendChild(contentDiv);
@@ -257,7 +264,7 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     var textDiv = containerDocument.createElement("div");
     var locationSpan = containerDocument.createElement("span");
     var sizeSpan = containerDocument.createElement("span");
-    var fileCountSpan = containerDocument.createElement("span");
+    var folderSpan = containerDocument.createElement("span");
     var navigationDiv = containerDocument.createElement("div");
     var navigationArrowAction = containerDocument.createElement("span");
     var navigationArrowLink = containerDocument.createElement("a");
@@ -275,7 +282,7 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     textDiv.className='childEntryText';
     locationSpan.className='childEntryLocation';
     sizeSpan.className='childEntrySize';
-    fileCountSpan.className='childEntryFileCount';
+    folderSpan.className = 'childEntryIcon';
     navigationDiv.className='childEntryNavigation';
     navigationArrowAction.className='childEntryNavigationAction';
     navigationArrowLink.className='childEntryNavigationLink';
@@ -291,11 +298,10 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     navigationArrowLink.appendChild(navigationLinkText);
     navigationDiv.appendChild(navigationArrowAction);
     navigationDiv.appendChild(navigationArrowLink);
+    textDiv.appendChild(folderSpan);
     textDiv.appendChild(locationSpan);
     textDiv.appendChild(containerDocument.createElement("br"));
     textDiv.appendChild(sizeSpan);
-    textDiv.appendChild(containerDocument.createElement("br"));
-    textDiv.appendChild(fileCountSpan);
     textDiv.appendChild(containerDocument.createElement("br"));
     textDiv.appendChild(navigationDiv);
     contentDiv.appendChild(swatchDiv);
@@ -311,54 +317,13 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     containerElement.folderslice.swatchShape = swatchShape;
     containerElement.folderslice.swatchFill = swatchFill;
     containerElement.folderslice.textDiv = textDiv;
+    containerElement.folderslice.folderSpan = folderSpan;
     containerElement.folderslice.locationSpan = locationSpan;
     containerElement.folderslice.sizeSpan = sizeSpan;
-    containerElement.folderslice.fileCountSpan = fileCountSpan;
     containerElement.folderslice.navigationDiv = navigationDiv;
     containerElement.folderslice.navigationArrowAction = navigationArrowAction;
     containerElement.folderslice.navigationArrowLink = navigationArrowLink;
     containerElement.folderslice.navigationLinkText = navigationLinkText;
-
-    // Attach to container.
-    containerElement.appendChild(contentDiv);
-}
-
-function createParentResultContainer(containerDocument, containerElement)
-{
-    var contentDiv = containerDocument.createElement("div");
-    var pieDiv = containerDocument.createElement("div");
-    var textDiv = containerDocument.createElement("div");
-    var locationSpan = containerDocument.createElement("span");
-    var sizeSpan = containerDocument.createElement("span");
-    var fileCountSpan = containerDocument.createElement("span");
-
-    contentDiv.className='mainEntry';
-    pieDiv.className='mainEntryPie';
-    textDiv.className='mainEntryText';
-    locationSpan.className='mainEntryLocation';
-    sizeSpan.className='mainEntrySize';
-    fileCountSpan.className='mainEntryFileCount';
-
-    // Assemble in reverse order
-    textDiv.appendChild(locationSpan);
-    textDiv.appendChild(containerDocument.createElement("br"));
-    textDiv.appendChild(sizeSpan);
-    textDiv.appendChild(containerDocument.createElement("br"));
-    textDiv.appendChild(fileCountSpan);
-    contentDiv.appendChild(pieDiv);
-    contentDiv.appendChild(textDiv);
-
-    // Marker metadata
-    containerElement.folderslice = new Object;
-    containerElement.folderslice.isChild = false;
-
-    // Set elements as attributes, for easy access
-    containerElement.folderslice.contentDiv = contentDiv;
-    containerElement.folderslice.pieDiv = pieDiv;
-    containerElement.folderslice.textDiv = textDiv;
-    containerElement.folderslice.locationSpan = locationSpan;
-    containerElement.folderslice.sizeSpan = sizeSpan;
-    containerElement.folderslice.fileCountSpan = fileCountSpan;
 
     // Attach to container.
     containerElement.appendChild(contentDiv);
@@ -559,6 +524,7 @@ function kickOff(droppedItem)
     gadgetState.visited[target.path].size = 0;
     gadgetState.visited[target.path].parent = null;
     gadgetState.visited[target.path].numFiles = 0;
+    gadgetState.visited[target.path].numImmediateChildren = 0;
 
     var tallyState = new Object;
     tallyState.bootstrap = true;
@@ -610,7 +576,14 @@ function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocatio
     var element = flyoutElement.folderslice.locationSpan;
     if (element)
     {
-        element.innerText = "Folder: " + folderName;
+        if (flyoutElement.folderslice.isChild)
+        {
+            element.innerText = folderName;
+        }
+        else
+        {
+            element.innerText = folderLocation;
+        }   
     }
 
     element = flyoutElement.folderslice.sizeSpan;
@@ -618,20 +591,21 @@ function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocatio
     {
         if (flyoutElement.folderslice.isChild)
         {
-            element.innerText = "Contains " + formattedPercent + "% of the parent folder's space";
+            element.innerText = formattedSize + " in " + numFiles + " files (" + formattedPercent + "% of the parent folder)";
         }
         else
         {
-            element.innerText = "Contains " + formattedPercent + "% of all space used on drive " + getDriveLetter(folderLocation);
+            element.innerText = formattedSize + " in " + numFiles + " files (" + formattedPercent + "% of used space on drive " + getDriveLetter(folderLocation) + ")";
         }
     }
 
+/*
     element = flyoutElement.folderslice.fileCountSpan;
     if (element)
     {
         element.innerText = numFiles + " files";
     }
-
+*/
     if (flyoutElement.folderslice.isChild)
     {
         // Special child entry processing!
@@ -710,11 +684,6 @@ function flyoutNavigate(folderLocation)
 function updateTargetResults(pieDivId)
 {
     updateTargetResultsInternal(false, document.getElementById(pieDivId), undefined);
-}
-
-function updateFlyoutTargetResults(flyoutElement)
-{
-    updateTargetResultsInternal(true, flyoutElement.folderslice.pieDiv, flyoutElement);
 }
 
 function updateTargetResultsInternal(isFlyout, pieDiv, flyoutElement)
@@ -832,7 +801,61 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
     var pieX = centerX;
     var pieY = centerY;
 
+    var driveLetter = gadgetState.target.path.charAt(0).toUpperCase();
+    var drive = System.Shell.drive(driveLetter);
+    var totalSizeMB = drive.totalSize;
+    var freeSpaceMB = drive.freeSpace;
+    var usedSpaceMB = totalSizeMB - freeSpaceMB;
+    var targetSizeBytes = gadgetState.visited[gadgetState.target.path].size;
+    var formattedSize = formatSizeNice(targetSizeBytes);
+    var percentUsedSpaceUsedByFolder = targetSizeBytes / (usedSpaceMB * 1024 * 1024);
+    var formattedPercent = (percentUsedSpaceUsedByFolder < 0.1 ? "0" : "") + (percentUsedSpaceUsedByFolder * 100).toFixed(1);
+
+    if (element.folderslice.titleSpan)
+    {
+        element.folderslice.titleSpan.innerText = gadgetState.target.path;
+    }
+
+    if (element.folderslice.detailsSpan)
+    {
+        element.folderslice.detailsSpan.innerText = "Contains " + formattedPercent + "% of the space used on your hard drive (" + formattedSize + ")";
+    }
+
+    if (element.folderslice.details2Span)
+    {
+        var numChildren = gadgetState.sortedTargetChildren.length;
+        var numImmediateChildren = gadgetState.visited[gadgetState.target.path].numImmediateChildren;
+        element.folderslice.details2Span.innerText = "Contains " + numImmediateChildren + " files (not including files in " + numChildren + " child folders)";
+    }
+
     makePieWithSlices(element.folderslice.pieDiv, pieX, pieY, sliceOffset, pieRadius,
+        sliceSizes, 100,
+        gadgetState.pieColors.color1,
+        gadgetState.pieColors.color2,
+        childColors);
+
+    // Now create a pie for the parent folder...
+    // Fill in children.
+    fullWidth = element.folderslice.pieDiv2.offsetWidth; // IE-specific alternative to pixelWidth
+    fullHeight = element.folderslice.pieDiv2.offsetHeight; // IE-specific alternative to pixelHeight
+    centerX = fullWidth / 2;
+    centerY = fullHeight / 2;
+    smallestDimension = fullHeight;
+    if (fullHeight > fullWidth)
+    {
+        smallestDimension = fullWidth;
+    }
+
+    pieWidth = smallestDimension;
+    pieHeight = pieWidth;
+    sliceOffset = 3;
+    pieRadius = (smallestDimension / 2) - (sliceOffset * 2);
+    pieX = centerX;
+    pieY = centerY;
+
+    sliceSizes = new Array;
+    sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
+    makePieWithSlices(element.folderslice.pieDiv2, pieX, pieY, sliceOffset, pieRadius,
         sliceSizes, 100,
         gadgetState.pieColors.color1,
         gadgetState.pieColors.color2,
@@ -1235,6 +1258,7 @@ function tallyFolderSize(invocationCounter)
                     gadgetState.visited[entry.path].parent = tallyState.target;
                     gadgetState.visited[entry.path].numFiles = 0;
                     gadgetState.visited[entry.path].path = entry.path;
+                    gadgetState.visited[entry.path].numImmediateChildren = 0;
 
                     // if (DEBUG) debug("folder:" + path);
                     // Recurse.
@@ -1250,6 +1274,7 @@ function tallyFolderSize(invocationCounter)
                     // Archive folder
                     gadgetState.tallySizeBytes += entry.size;
                     gadgetState.numFiles++;
+                    gadgetState.visited[tallyState.target.path].numImmediateChildren++;
                     addSizeRecursive(tallyState.target.path, entry.size);
                     // if (DEBUG) debug("archive:" + path);
                 }
@@ -1260,6 +1285,7 @@ function tallyFolderSize(invocationCounter)
                 // Must be a file!
                 gadgetState.tallySizeBytes += entry.size;
                 gadgetState.numFiles++;
+                gadgetState.visited[tallyState.target.path].numImmediateChildren++;
                 addSizeRecursive(tallyState.target.path, entry.size);
                 // if (DEBUG) debug("file:" + entry.path);
             }
