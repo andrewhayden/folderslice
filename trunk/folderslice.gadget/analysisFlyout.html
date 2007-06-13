@@ -96,6 +96,16 @@
             margin-right: 10px;
         }
 
+        *.childEntryExploreAction
+        {
+            background-image: url("folder.png");
+            background-repeat: no-repeat;
+            width: 16px;
+            height: 16px;
+            margin-right: 10px;
+            margin-left: 20px;
+        }
+
         span.childEntryLocation, span.childEntrySize, span.childEntryFileCount,
         span.childEntryNavigation,
         span.childSummaryTitle, span.childSummaryDetails
@@ -166,6 +176,11 @@
     function flyoutNavigate(path)
     {
         System.Gadget.document.parentWindow.flyoutNavigate(path);
+    }
+
+    function flyoutExplore(path)
+    {
+        System.Shell.execute('"' + path + '"');
     }
     </script>
 </head>
