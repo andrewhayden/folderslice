@@ -172,12 +172,15 @@ function flyoutLoadedInternal()
         createChildSummaryContainer(System.Gadget.Flyout.document, summaryWrapper);
 
         // Create new element to hold children.
+        var childOuterWrapper = System.Gadget.Flyout.document.createElement("div");
+        childOuterWrapper.className='childOuterWrapper';
         var childWrapper = System.Gadget.Flyout.document.createElement("div");
         childWrapper.className='childWrapper';
 
         // Add everything in.
+        childOuterWrapper.appendChild(childWrapper);
         element.appendChild(summaryWrapper);
-        element.appendChild(childWrapper);
+        element.appendChild(childOuterWrapper);
 
         // Figure out sizes and colors.
         var sortedChildren = gadgetState.sortedTargetChildren;
