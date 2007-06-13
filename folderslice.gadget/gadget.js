@@ -269,6 +269,9 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     var navigationArrowAction = containerDocument.createElement("span");
     var navigationArrowLink = containerDocument.createElement("a");
     var navigationLinkText = containerDocument.createTextNode("");
+    var exploreAction = containerDocument.createElement("span");
+    var exploreLink = containerDocument.createElement("a");
+    var exploreLinkText= containerDocument.createTextNode("");
 
     // Make color swatch
     var swatchShape = containerDocument.createElement("v:roundrect");
@@ -288,6 +291,9 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     navigationArrowLink.className='childEntryNavigationLink';
     swatchShape.className='childEntrySwatchShape';
     swatchFill.className='childEntrySwatchFill';
+    exploreAction.className = 'childEntryExploreAction';
+    exploreLink.className = 'childEntryExploreLink';
+
 
     // Give the button an ID
     contentDiv.id = "childEntry" + childIndex;
@@ -296,8 +302,11 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     swatchShape.appendChild(swatchFill);
     swatchDiv.appendChild(swatchShape);
     navigationArrowLink.appendChild(navigationLinkText);
+    exploreLink.appendChild(exploreLinkText);
     navigationDiv.appendChild(navigationArrowAction);
     navigationDiv.appendChild(navigationArrowLink);
+    navigationDiv.appendChild(exploreAction);
+    navigationDiv.appendChild(exploreLink);
     textDiv.appendChild(folderSpan);
     textDiv.appendChild(locationSpan);
     textDiv.appendChild(containerDocument.createElement("br"));
@@ -324,6 +333,9 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     containerElement.folderslice.navigationArrowAction = navigationArrowAction;
     containerElement.folderslice.navigationArrowLink = navigationArrowLink;
     containerElement.folderslice.navigationLinkText = navigationLinkText;
+    containerElement.folderslice.exploreAction = exploreAction;
+    containerElement.folderslice.exploreLink = exploreLink;
+    containerElement.folderslice.exploreLinkText = exploreLinkText;
 
     // Attach to container.
     containerElement.appendChild(contentDiv);
@@ -642,6 +654,25 @@ function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocatio
         if (element)
         {
             element.data="Step into this folder...";
+        }
+
+        element = flyoutElement.folderslice.exploreAction;
+        if (element)
+        {
+            // Set on-click
+            element.onclick=new Function("flyoutExplore('" + bakedPath + "');");
+        }
+
+        element = flyoutElement.folderslice.exploreLink;
+        if (element)
+        {
+            element.href="javascript:flyoutExplore('" + bakedPath + "');";
+        }
+
+        element = flyoutElement.folderslice.exploreLinkText;
+        if (element)
+        {
+            element.data="Explore this folder...";
         }
     }
 }
