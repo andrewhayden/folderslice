@@ -15,20 +15,44 @@
             behavior: url(#default#VML);
         }
 
-        div.mainEntry, div.childEntry, div.childSummary
+        div.childEntry, div.childSummary
         {
             height: 60px;
-            width: 400px;
+            width: 600px;
             margin-bottom: 10px;
             overflow: hidden;
             white-space: nowrap;
         }
-        
-        div.mainEntryPie, div.childEntrySwatch, div.childSummaryPie
+
+        div.childSummary
+        {
+            height: 128px;
+        }
+
+        div.childEntrySwatch
         {
             float: left;
             width: 80px;
             height: 60px;
+        }
+
+        div.childSummaryPieWrapper
+        {
+            background-image: url('folder-128x128.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 128px;
+            height: 128px;
+            float: left;
+        }
+
+        div.childSummaryPie
+        {
+            width: 100px;
+            height: 100px;
+            position: absolute;
+            left: 14px;
+            top: 24px;
         }
 
         div.childEntrySwatch
@@ -46,11 +70,19 @@
             height: 32px;
         }
 
-        div.mainEntryText, div.childEntryText;, div.childSummaryText
+        div.childEntryText, div.childSummaryText
         {
             float: right;
-            width: 320px;
+            width: 520px;
             height: 60px;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        div.childSummaryText
+        {
+            width: 472px;
+            height: 120px;
             overflow: hidden;
             white-space: nowrap;
         }
@@ -61,34 +93,68 @@
             background-repeat: no-repeat;
             width: 16px;
             height: 16px;
+            margin-right: 10px;
         }
 
-        span.mainEntryLocation, span.mainEntrySize, span.mainEntryFileCount,
         span.childEntryLocation, span.childEntrySize, span.childEntryFileCount,
         span.childEntryNavigation,
         span.childSummaryTitle, span.childSummaryDetails
         {
-            width: 300px;
+            width: 500px;
             overflow: hidden;
             white-space: nowrap;
         }
 
-        div.parentWrapper
+        span.childSummaryTitle
         {
-            width: 400px;
-            height: 60px;
+            font-size: 12pt;
+            font-weight: bold;
+        }
+
+        span.childEntryLocation
+        {
+            font-weight: bold;
+            font-size: 120%;
+        }
+
+        span.childEntryIcon
+        {
+            background-image: url('folder.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 16px;
+            height: 16x;
+            margin-right: 10px;
         }
 
         div.summaryWrapper
         {
-            width: 400px;
-            height: 60px;
+            width: 620px;
+            height: 128px;
         }
 
         div.childWrapper
         {
-            width: 400px;
-            height: 60px;
+            width: 620px;
+            height: 500px;
+            overflow: scroll;
+            border-top: 3px solid black;
+        }
+
+        span.childSummaryParentPie
+        {
+            width: 32px;
+            height: 32px;
+            position: absolute;
+            top: 10px;
+            left: 5px;
+        }
+
+        span.childSummaryDetails
+        {
+            width: 360px;
+            overflow: hidden;
+            white-space: nowrap;
         }
     </style>
     <script language="javascript" type="text/javascript">
@@ -104,7 +170,7 @@
     </script>
 </head>
 <html>
-<body style='width: 420px; height: 400px; overflow: scroll;' onload='init()'>
+<body style='width: 620px; height: 620px; overflow: hidden;' onload='init()'>
 <div id='content' style='width: 100%; height: 100%;'></div>
 </body>
 </html>
