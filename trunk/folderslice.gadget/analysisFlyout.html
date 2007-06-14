@@ -17,6 +17,18 @@
     {
         System.Shell.execute('"' + path + '"');
     }
+
+    function flyoutRefresh()
+    {
+        System.Gadget.document.parentWindow.gadgetState.showFlyoutOnFinish = true;
+        System.Gadget.document.parentWindow.refresh();
+    }
+
+    function flyoutUpOneLevel()
+    {
+        System.Gadget.document.parentWindow.gadgetState.showFlyoutOnFinish = true;
+        System.Gadget.document.parentWindow.parentNavigate();
+    }
     </script>
 </head>
 <html>

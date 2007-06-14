@@ -4,7 +4,8 @@
     font-size: 12px;
     margin: 0px;
     padding: 0px;
-    color: rgb(255,255,255);
+    /* color: rgb(255,255,255); */
+    color: rgb(225,225,225);
 }
 
 body
@@ -20,10 +21,20 @@ body
 
 A:link, A:visited
 {
-    color: rgb(255,255,255);
+    color: rgb(225,225,225);
 }
 
 A:hover
+{
+    color: rgb(0,255,0);
+}
+
+A.childEntryNavigationLink:link
+{
+    color: rgb(255,255,255);
+}
+
+A.childEntryNavigationLink:hover
 {
     color: rgb(0,255,0);
 }
@@ -183,9 +194,28 @@ span.childSummaryParentPie
     left: 5px;
 }
 
-span.childSummaryDetails, span.childSummaryTitle
+span.childSummaryDetails, span.childSummaryTitle,
+childSummaryRefreshSpan, childSummaryUpOneLevelSpan
 {
     width: 472px;
     overflow: hidden;
     white-space: nowrap;
+}
+
+span.childSummaryRefreshAction
+{
+    background-image: url("refresh-dark.png");
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+}
+
+span.childSummaryUpOneLevelAction
+{
+    background-image: url("up-dark.png");
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
 }
