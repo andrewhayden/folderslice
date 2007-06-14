@@ -1,0 +1,15 @@
+#summary Main page of the folderslice wiki
+
+= Introduction =
+Folderslice is a _free_ Windows Vista Sidebar gadget that makes it simple (finally) to find out where all that space on your hard drive has gone.  This is the wiki for folderslice, where you will (hopefully) find useful information on how to install and use the gadget.
+
+= Screenshots =
+|| Docked || Showing Details || On a Clean Desktop ||
+|| [http://folderslice.googlecode.com/svn/trunk/screenshots/sidebar.png http://folderslice.googlecode.com/svn/trunk/screenshots/sidebar-thumb.png ] || [http://folderslice.googlecode.com/svn/trunk/screenshots/flyout-and-sidebar-cropped.png http://folderslice.googlecode.com/svn/trunk/screenshots/flyout-and-sidebar-cropped-thumb.png] || [http://folderslice.googlecode.com/svn/trunk/screenshots/desktop.png http://folderslice.googlecode.com/svn/trunk/screenshots/desktop-thumb.png] ||
+
+= Instructions For... =
+  # [Installation Installation]
+  # [Usage Usage]
+
+
+
