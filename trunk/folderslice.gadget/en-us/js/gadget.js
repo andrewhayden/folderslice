@@ -1468,7 +1468,7 @@ function highlightRefreshButton()
     var element = document.getElementById("refreshButton");
     if (element)
     {
-        element.style.backgroundImage = 'url("refresh-light.png")';
+        element.style.backgroundImage = 'url("images/refresh-light.png")';
     }
 }
 
@@ -1477,7 +1477,7 @@ function darkenRefreshButton(childId)
     var element = document.getElementById("refreshButton");
     if (element)
     {
-        element.style.backgroundImage = 'url("refresh-dark.png")';
+        element.style.backgroundImage = 'url("images/refresh-dark.png")';
     }
 }
 
@@ -1486,7 +1486,7 @@ function highlightParentGoButton()
     var element = document.getElementById("parentGoButton");
     if (element)
     {
-        element.style.backgroundImage = 'url("up-light.png")';
+        element.style.backgroundImage = 'url("images/up-light.png")';
     }
 }
 
@@ -1495,7 +1495,7 @@ function darkenParentGoButton()
     var element = document.getElementById("parentGoButton");
     if (element)
     {
-        element.style.backgroundImage = 'url("up-dark.png")';
+        element.style.backgroundImage = 'url("images/up-dark.png")';
     }
 }
 

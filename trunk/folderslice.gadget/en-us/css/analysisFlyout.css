@@ -13,7 +13,7 @@ body
     width: 620px;
     height: 620px;
     overflow: hidden;
-    background-image: url('flyout-background.png');
+    background-image: url('../images/flyout-background.png');
     background-attachment: fixed;
     background-position: top left;
     background-repeat: no-repeat;
@@ -72,7 +72,7 @@ div.childEntrySwatch
 
 div.childSummaryPieWrapper
 {
-    background-image: url('folder-128x128.png');
+    background-image: url('../images/folder-128x128.png');
     background-repeat: no-repeat;
     background-position: center;
     width: 128px;
@@ -123,7 +123,7 @@ div.childSummaryText
 
 *.childEntryExploreAction
 {
-    background-image: url("folder.png");
+    background-image: url("../images/folder.png");
     background-repeat: no-repeat;
     width: 16px;
     height: 16px;
@@ -204,7 +204,7 @@ childSummaryRefreshSpan, childSummaryUpOneLevelSpan
 
 span.childSummaryRefreshAction
 {
-    background-image: url("refresh-dark.png");
+    background-image: url("../images/refresh-dark.png");
     background-repeat: no-repeat;
     width: 16px;
     height: 16px;
@@ -213,7 +213,7 @@ span.childSummaryRefreshAction
 
 span.childSummaryUpOneLevelAction
 {
-    background-image: url("up-dark.png");
+    background-image: url("../images/up-dark.png");
     background-repeat: no-repeat;
     width: 16px;
     height: 16px;
