@@ -1,5 +1,0 @@
-#summary Main page
-
-= Introduction =
-
-Coming soon.
