@@ -1,7 +1,7 @@
 *
 {
     font-family: sans-serif;
-    font-size: 8pt;
+    font-size: 12px;
     margin: 0px;
     padding: 0px;
     color: rgb(255,255,255);
@@ -71,11 +71,11 @@ div.childSummaryPieWrapper
 
 div.childSummaryPie
 {
-    width: 100px;
-    height: 100px;
+    width: 90px;
+    height: 90px;
     position: absolute;
-    left: 14px;
-    top: 24px;
+    left: 19px;
+    top: 29px;
 }
 
 div.childEntrySwatch
@@ -110,54 +110,40 @@ div.childSummaryText
     white-space: nowrap;
 }
 
-*.childEntryNavigationAction
-{
-    background-image: url("arrow-dark.png");
-    background-repeat: no-repeat;
-    width: 16px;
-    height: 16px;
-    margin-right: 10px;
-}
-
 *.childEntryExploreAction
 {
     background-image: url("folder.png");
     background-repeat: no-repeat;
     width: 16px;
     height: 16px;
-    margin-right: 10px;
-    margin-left: 20px;
+    margin-right: 5px;
 }
 
 span.childEntryLocation, span.childEntrySize, span.childEntryFileCount,
-span.childEntryNavigation,
-span.childSummaryTitle, span.childSummaryDetails
+span.childEntryNavigation
 {
-    width: 500px;
+    width: 520px;
     overflow: hidden;
     white-space: nowrap;
 }
 
+a.childEntryNavigationLink
+{
+    width: auto;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
 span.childSummaryTitle
 {
-    font-size: 12pt;
+    font-size: 140%;
     font-weight: bold;
 }
 
-span.childEntryLocation
+a.childEntryNavigationLink
 {
     font-weight: bold;
-    font-size: 120%;
-}
-
-span.childEntryIcon
-{
-    background-image: url('folder.png');
-    background-repeat: no-repeat;
-    background-position: center;
-    width: 16px;
-    height: 16x;
-    margin-right: 10px;
+    font-size: 140%;
 }
 
 div.summaryWrapper
@@ -185,7 +171,7 @@ div.childWrapper
     width: 610px;
     height: 495px;
     overflow: scroll;
-    border-top: 3px solid white;
+    border-top: 1px solid white;
 }
 
 span.childSummaryParentPie
@@ -197,9 +183,9 @@ span.childSummaryParentPie
     left: 5px;
 }
 
-span.childSummaryDetails
+span.childSummaryDetails, span.childSummaryTitle
 {
-    width: 360px;
+    width: 472px;
     overflow: hidden;
     white-space: nowrap;
 }
