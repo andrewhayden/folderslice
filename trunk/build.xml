@@ -8,7 +8,7 @@
         <echo message="Deploying to: ${gadgethome}" />
         <copy todir="${gadgethome}" verbose="true">
             <fileset dir="." id="gadgetsrc">
-                <include name="folderslice.gadget/**.*"/>
+                <include name="folderslice.gadget/**"/>
             </fileset>
         </copy>
         <echo message="Succeeded.  You can now add the gadget from the sidebar menu." />
