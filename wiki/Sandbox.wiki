@@ -17,8 +17,10 @@ Add your content here.  Format your content with:
 
 Screenshots:
 
-http://folderslice.googlecode.com/svn/trunk/screenshots/sidebar-thumb.png
+[http://folderslice.googlecode.com/svn/trunk/screenshots/sidebar.png http://folderslice.googlecode.com/svn/trunk/screenshots/sidebar-thumb.png ]
 http://folderslice.googlecode.com/svn/trunk/screenshots/flyout-and-sidebar-cropped-thumb.png
 http://folderslice.googlecode.com/svn/trunk/screenshots/desktop-thumb.png
 
 For more information, please visit the wiki.
+
+
