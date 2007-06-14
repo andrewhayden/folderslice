@@ -1,13 +1,26 @@
 <project name="folderslice" default="deploy">
     <property environment="env" />
     <property name="gadgethome" value="${env.USERPROFILE}/AppData/Local/Microsoft/Windows Sidebar/Gadgets" />
+    <property name="tempdir" value="temp" />
+    <property file="build.properties" />
 
-    <target name="deploy" description="deploy the gadget by copying to your local gadgets directory">
+    <target name="-prepare">
+        <delete includeemptydirs="true" failonerror="false" dir="${tempdir}"/>
+        <mkdir dir="${tempdir}"/>
+        <copy todir="${tempdir}" verbose="true">
+            <fileset dir=".">
+                <include name="folderslice.gadget/**"/>
+            </fileset>
+        </copy>
+        <replace file="${tempdir}/folderslice.gadget/en-us/gadget.xml" token="$${version}" value="${version}"/>
+    </target>
+
+    <target name="deploy" depends="-prepare" description="deploy the gadget by copying to your local gadgets directory">
         <fail unless="env.USERPROFILE"
             message="Please set the USERPROFILE environment variable correctly." />
         <echo message="Deploying to: ${gadgethome}" />
         <copy todir="${gadgethome}" verbose="true">
-            <fileset dir="." id="gadgetsrc">
+            <fileset dir="${tempdir}">
                 <include name="folderslice.gadget/**"/>
             </fileset>
         </copy>
@@ -22,7 +35,7 @@
 
     <target name="package" description="build installable package">
         <mkdir dir="releases"/>
-        <delete failonerror="false" file="releases/folderslice.gadget" />
-        <zip basedir="folderslice.gadget" destfile="releases/folderslice.gadget" />
+        <delete failonerror="false" file="releases/folderslice-${version}.gadget" />
+        <zip basedir="${tempdir}/folderslice.gadget" destfile="releases/folderslice-${version}.gadget" />
     </target>
 </project>
