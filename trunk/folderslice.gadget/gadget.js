@@ -63,7 +63,6 @@ function startupInternal()
     gadgetState.targetSuffix = "_target";
     gadgetState.childrenPieDivId = "childrenPieDiv";
     gadgetState.childrenSwatchDivId = "childSwatchDiv";
-    gadgetState.childrenGoButtonId = "childGoButton";
     gadgetState.progressIndicatorId = "progressIndicator";
     gadgetState.childSuffix = "_child";
     gadgetState.maxTargetChars = 12;
@@ -265,13 +264,9 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     var contentDiv = containerDocument.createElement("div");
     var swatchDiv = containerDocument.createElement("div");
     var textDiv = containerDocument.createElement("div");
-    var locationSpan = containerDocument.createElement("span");
     var sizeSpan = containerDocument.createElement("span");
-    var folderSpan = containerDocument.createElement("span");
     var navigationDiv = containerDocument.createElement("div");
-    var navigationArrowAction = containerDocument.createElement("span");
-    var navigationArrowLink = containerDocument.createElement("a");
-    var navigationLinkText = containerDocument.createTextNode("");
+    var navigationLink = containerDocument.createElement("a");
     var exploreAction = containerDocument.createElement("span");
     var exploreLink = containerDocument.createElement("a");
     var exploreLinkText= containerDocument.createTextNode("");
@@ -286,12 +281,9 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     contentDiv.className='childEntry';
     swatchDiv.className='childEntrySwatch';
     textDiv.className='childEntryText';
-    locationSpan.className='childEntryLocation';
     sizeSpan.className='childEntrySize';
-    folderSpan.className = 'childEntryIcon';
     navigationDiv.className='childEntryNavigation';
-    navigationArrowAction.className='childEntryNavigationAction';
-    navigationArrowLink.className='childEntryNavigationLink';
+    navigationLink.className='childEntryNavigationLink';
     swatchShape.className='childEntrySwatchShape';
     swatchFill.className='childEntrySwatchFill';
     exploreAction.className = 'childEntryExploreAction';
@@ -304,14 +296,10 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     // Assemble in reverse order...
     swatchShape.appendChild(swatchFill);
     swatchDiv.appendChild(swatchShape);
-    navigationArrowLink.appendChild(navigationLinkText);
     exploreLink.appendChild(exploreLinkText);
-    navigationDiv.appendChild(navigationArrowAction);
-    navigationDiv.appendChild(navigationArrowLink);
     navigationDiv.appendChild(exploreAction);
     navigationDiv.appendChild(exploreLink);
-    textDiv.appendChild(folderSpan);
-    textDiv.appendChild(locationSpan);
+    textDiv.appendChild(navigationLink);
     textDiv.appendChild(containerDocument.createElement("br"));
     textDiv.appendChild(sizeSpan);
     textDiv.appendChild(containerDocument.createElement("br"));
@@ -329,13 +317,9 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     containerElement.folderslice.swatchShape = swatchShape;
     containerElement.folderslice.swatchFill = swatchFill;
     containerElement.folderslice.textDiv = textDiv;
-    containerElement.folderslice.folderSpan = folderSpan;
-    containerElement.folderslice.locationSpan = locationSpan;
     containerElement.folderslice.sizeSpan = sizeSpan;
     containerElement.folderslice.navigationDiv = navigationDiv;
-    containerElement.folderslice.navigationArrowAction = navigationArrowAction;
-    containerElement.folderslice.navigationArrowLink = navigationArrowLink;
-    containerElement.folderslice.navigationLinkText = navigationLinkText;
+    containerElement.folderslice.navigationLink = navigationLink;
     containerElement.folderslice.exploreAction = exploreAction;
     containerElement.folderslice.exploreLink = exploreLink;
     containerElement.folderslice.exploreLinkText = exploreLinkText;
@@ -591,11 +575,7 @@ function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocatio
     var element = flyoutElement.folderslice.locationSpan;
     if (element)
     {
-        if (flyoutElement.folderslice.isChild)
-        {
-            element.innerText = folderName;
-        }
-        else
+        if (!flyoutElement.folderslice.isChild)
         {
             element.innerText = folderLocation;
         }   
@@ -640,23 +620,11 @@ function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocatio
             element.color2 = color2;
         }
 
-        element = flyoutElement.folderslice.navigationArrowAction;
-        if (element)
-        {
-            // Set on-click
-            element.onclick=new Function("flyoutNavigate('" + bakedPath + "');");
-        }
-
-        element = flyoutElement.folderslice.navigationArrowLink;
+        element = flyoutElement.folderslice.navigationLink;
         if (element)
         {
             element.href="javascript:flyoutNavigate('" + bakedPath + "');";
-        }
-
-        element = flyoutElement.folderslice.navigationLinkText;
-        if (element)
-        {
-            element.data="Step into this folder...";
+            element.innerText = folderName;
         }
 
         element = flyoutElement.folderslice.exploreAction;
@@ -1410,26 +1378,6 @@ function getEntriesDecreasingOrder(path)
     children.sort(entryCompare);
     children.reverse();
     return children;
-}
-
-function highlightGoButton(childId)
-{
-    var id = gadgetState.childrenGoButtonId + childId;
-    var element = document.getElementById(id);
-    if (element)
-    {
-        element.style.backgroundImage = 'url("arrow-light.png")';
-    }
-}
-
-function darkenGoButton(childId)
-{
-    var id = gadgetState.childrenGoButtonId + childId;
-    var element = document.getElementById(id);
-    if (element)
-    {
-        element.style.backgroundImage = 'url("arrow-dark.png")';
-    }
 }
 
 function highlightRefreshButton()
