@@ -219,6 +219,7 @@ function createChildSummaryContainer(containerDocument, containerElement)
     var titleSpan = containerDocument.createElement("span");
     var detailsSpan = containerDocument.createElement("span");
     var details2Span = containerDocument.createElement("span");
+    var details3Span = containerDocument.createElement("span");
 
     // Assign class
     contentDiv.className='childSummary';
@@ -228,7 +229,8 @@ function createChildSummaryContainer(containerDocument, containerElement)
     textDiv.className='childSummaryText';
     titleSpan.className='childSummaryTitle';
     detailsSpan.className='childSummaryDetails';
-    detailsSpan.className='childSummaryDetails';
+    details2Span.className='childSummaryDetails';
+    details3Span.className='childSummaryDetails';
 
     // Assemble in reverse order...
     textDiv.appendChild(titleSpan);
@@ -236,6 +238,8 @@ function createChildSummaryContainer(containerDocument, containerElement)
     textDiv.appendChild(detailsSpan);
     textDiv.appendChild(containerDocument.createElement("br"));
     textDiv.appendChild(details2Span);
+    textDiv.appendChild(containerDocument.createElement("br"));
+    textDiv.appendChild(details3Span);
     pieWrapper.appendChild(pieDiv);
     pieWrapper.appendChild(pieDiv2);
     contentDiv.appendChild(pieWrapper);
@@ -254,6 +258,7 @@ function createChildSummaryContainer(containerDocument, containerElement)
     containerElement.folderslice.titleSpan = titleSpan;
     containerElement.folderslice.detailsSpan = detailsSpan;
     containerElement.folderslice.details2Span = details2Span;
+    containerElement.folderslice.details3Span = details3Span;
 
     // Attach to container.
     containerElement.appendChild(contentDiv);
@@ -785,6 +790,8 @@ function updateFlyoutChildrenResults(element, sliceSizes, sliceColors)
 
 function updateFlyoutSummaryResults(element, sliceSizes, childColors)
 {
+        debug("summary: childColors.length=" + childColors.length);
+
     // Fill in children.
     var fullWidth = element.folderslice.pieDiv.offsetWidth; // IE-specific alternative to pixelWidth
     var fullHeight = element.folderslice.pieDiv.offsetHeight; // IE-specific alternative to pixelHeight
@@ -820,14 +827,42 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
 
     if (element.folderslice.detailsSpan)
     {
-        element.folderslice.detailsSpan.innerText = "Contains " + formattedPercent + "% of the space used on your hard drive (" + formattedSize + ")";
+        element.folderslice.detailsSpan.innerText = "Contains " + formattedPercent + "% of the space used on your hard drive (" + formattedSize + ").";
     }
 
+    var numFiles = gadgetState.visited[gadgetState.target.path].numImmediateChildren;
     if (element.folderslice.details2Span)
     {
+        if (numFiles > 0)
+        {
+            element.folderslice.details2Span.innerText = "This folder contains " + numFiles + " files.";
+        }
+        else
+        {
+            element.folderslice.details2Span.innerText = "This folder contains no files.";
+        }
+    }
+
+    if (element.folderslice.details3Span)
+    {
         var numChildren = gadgetState.sortedTargetChildren.length;
-        var numImmediateChildren = gadgetState.visited[gadgetState.target.path].numImmediateChildren;
-        element.folderslice.details2Span.innerText = "Contains " + numImmediateChildren + " files (not including files in " + numChildren + " child folders)";
+        var numFilesInChildren = gadgetState.visited[gadgetState.target.path].numFiles - numFiles;
+        if (DEBUG) debug("num files total: " + numFiles + "; num in children: " + numFilesInChildren);
+        if (numChildren > 0)
+        {
+            if (numFilesInChildren > 0)
+            {
+                element.folderslice.details3Span.innerText = "There are " + numFilesInChildren + (numFiles > 0 ? "additional" : "") + " files within the " + numChildren + " folders listed below.";
+            }
+            else
+            {
+                element.folderslice.details3Span.innerText = "There are no additional files contained within the " + numChildren + " folders listed below.";
+            }
+        }
+        else
+        {
+            element.folderslice.details3Span.innerText = "There are no additional folders or files within this folder.";
+        }
     }
 
     makePieWithSlices(element.folderslice.pieDiv, pieX, pieY, sliceOffset, pieRadius,
@@ -861,7 +896,7 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
         sliceSizes, 100,
         gadgetState.pieColors.color1,
         gadgetState.pieColors.color2,
-        childColors);
+        gadgetState.childSliceColors);
 }
 
 function updateChildrenResultsInternal(isFlyout, pieDiv, flyoutElement)
