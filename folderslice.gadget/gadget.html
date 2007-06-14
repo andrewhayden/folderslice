@@ -116,15 +116,12 @@
         <div id='childrenDiv' style='position: absolute; left: 0px; top: 45px; width: 130px; height: 200px;'>
             <div id='childrenPieDiv' style='width: 45px; height: 45px; position: absolute; left: 0px; top: 0px;'></div>
             <div id='childrenSummaryDiv' style='position: absolute; left: 45px; top: 0px; padding-top: 2px; width: 85px; height: 45px;'>
-                <table style='border: none; width: 80px; height: 45px;' cellpadding='0' cellspacing='0'>
+                <table style='border: none; width: 80px; height: 25px;' cellpadding='0' cellspacing='0'>
                     <tr>
-                        <td style='font-weight: bold; border-bottom: 1px solid white;'>Child Folders</td>
+                        <td style='font-weight: bold;'>Child Folders:</td>
                     </tr>
                     <tr>
                         <td>(<span id='childrenCount'>3</span> Largest)</td>
-                    </tr>
-                    <tr>
-                        <td><a href='javascript:showAnalysisFlyout()'>More Details...</a></td>
                     </tr>
                 </table>
             </div>
@@ -159,6 +156,7 @@
                 </div>
             </div>
         </div>
+        <a href='javascript:showAnalysisFlyout()' style='position: absolute; top: 225px; right: 5px;'>Details...</a>
     </div>
 
     <div id='debugDiv' style='display: none; white-space: nowrap; overflow: scroll; background-color: rgb(0,0,0); color: red; z-index: 100; position: absolute; left: 0px; top: 145px; width: 130px; height: 100px; font-size: 10pt;'>

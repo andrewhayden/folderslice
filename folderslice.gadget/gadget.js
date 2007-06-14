@@ -80,6 +80,7 @@ function startupInternal()
     gadgetState.childSliceColors[2] = new Object;
     gadgetState.childSliceColors[2].color1 = "#0000ff";
     gadgetState.childSliceColors[2].color2 = "#000040";
+    gadgetState.showFlyoutOnFinish = false;
 
     // Show defaults.
     document.getElementById(gadgetState.cancelButtonId).noResize = true;
@@ -220,6 +221,12 @@ function createChildSummaryContainer(containerDocument, containerElement)
     var detailsSpan = containerDocument.createElement("span");
     var details2Span = containerDocument.createElement("span");
     var details3Span = containerDocument.createElement("span");
+    var refreshSpan = containerDocument.createElement("span");
+    var refreshAction = containerDocument.createElement("span");
+    var refreshLink = containerDocument.createElement("a");
+    var upOneLevelSpan = containerDocument.createElement("span");
+    var upOneLevelAction = containerDocument.createElement("span");
+    var upOneLevelLink = containerDocument.createElement("a");
 
     // Assign class
     contentDiv.className='childSummary';
@@ -231,8 +238,18 @@ function createChildSummaryContainer(containerDocument, containerElement)
     detailsSpan.className='childSummaryDetails';
     details2Span.className='childSummaryDetails';
     details3Span.className='childSummaryDetails';
+    refreshSpan.className='childSummaryRefreshSpan';
+    refreshAction.className='childSummaryRefreshAction';
+    refreshLink.className='childSummaryRefreshLink';
+    upOneLevelSpan.className='childSummaryUpOneLevelSpan';
+    upOneLevelAction.className='childSummaryUpOneLevelAction';
+    upOneLevelLink.className='childSummaryUpOneLevelLink';
 
     // Assemble in reverse order...
+    refreshSpan.appendChild(refreshAction);
+    refreshSpan.appendChild(refreshLink);
+    upOneLevelSpan.appendChild(upOneLevelAction);
+    upOneLevelSpan.appendChild(upOneLevelLink);
     textDiv.appendChild(titleSpan);
     textDiv.appendChild(containerDocument.createElement("br"));
     textDiv.appendChild(detailsSpan);
@@ -240,6 +257,10 @@ function createChildSummaryContainer(containerDocument, containerElement)
     textDiv.appendChild(details2Span);
     textDiv.appendChild(containerDocument.createElement("br"));
     textDiv.appendChild(details3Span);
+    textDiv.appendChild(containerDocument.createElement("br"));
+    textDiv.appendChild(refreshSpan);
+    textDiv.appendChild(containerDocument.createElement("br"));
+    textDiv.appendChild(upOneLevelSpan);
     pieWrapper.appendChild(pieDiv);
     pieWrapper.appendChild(pieDiv2);
     contentDiv.appendChild(pieWrapper);
@@ -259,6 +280,12 @@ function createChildSummaryContainer(containerDocument, containerElement)
     containerElement.folderslice.detailsSpan = detailsSpan;
     containerElement.folderslice.details2Span = details2Span;
     containerElement.folderslice.details3Span = details3Span;
+    containerElement.folderslice.refreshSpan = refreshSpan;
+    containerElement.folderslice.refreshAction = refreshAction;
+    containerElement.folderslice.refreshLink = refreshLink;
+    containerElement.folderslice.upOneLevelSpan = upOneLevelSpan;
+    containerElement.folderslice.upOneLevelAction = upOneLevelAction;
+    containerElement.folderslice.upOneLevelLink = upOneLevelLink;
 
     // Attach to container.
     containerElement.appendChild(contentDiv);
@@ -790,8 +817,6 @@ function updateFlyoutChildrenResults(element, sliceSizes, sliceColors)
 
 function updateFlyoutSummaryResults(element, sliceSizes, childColors)
 {
-        debug("summary: childColors.length=" + childColors.length);
-
     // Fill in children.
     var fullWidth = element.folderslice.pieDiv.offsetWidth; // IE-specific alternative to pixelWidth
     var fullHeight = element.folderslice.pieDiv.offsetHeight; // IE-specific alternative to pixelHeight
@@ -863,6 +888,21 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
         {
             element.folderslice.details3Span.innerText = "There are no additional folders or files within this folder.";
         }
+    }
+
+    if (element.folderslice.refreshLink)
+    {
+        element.folderslice.refreshLink.innerText = "Refresh the details for this folder...";
+        element.folderslice.refreshLink.href="javascript:flyoutRefresh();";
+    }
+    else
+    {
+        debug("no refresh link element...");
+    }
+    if (element.folderslice.upOneLevelLink)
+    {
+        element.folderslice.upOneLevelLink.innerText = "Display the details for this folder's parent...";
+        element.folderslice.upOneLevelLink.href="javascript:flyoutUpOneLevel();";
     }
 
     makePieWithSlices(element.folderslice.pieDiv, pieX, pieY, sliceOffset, pieRadius,
@@ -1121,7 +1161,15 @@ function finishUp()
         updateChildrenResults(gadgetState.childrenPieDivId);
         if (System.Gadget.Flyout.show)
         {
+            // Flyout already showing, must update
             flyoutLoadedInternal();
+        }
+        else if (gadgetState.showFlyoutOnFinish === true)
+        {
+            // Flyout not yet showing, but has been requested;
+            // Start the display.
+            gadgetState.showFlyoutOnFinish = false;
+            showAnalysisFlyout();
         }
     }
     catch(error)
