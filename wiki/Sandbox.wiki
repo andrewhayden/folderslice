@@ -12,8 +12,13 @@ Add your content here.  Format your content with:
   * Headings, paragraphs, and lists
   * Automatic links to other wiki pages
 
-|| *Docked* || *With "Flyout" (Details View)* || *On a Clean Desktop* ||
-|| http://folderslice.googlecode.com/svn/trunk/screenshots/sidebar-thumb.png || http://folderslice.googlecode.com/svn/trunk/screenshots/flyout-and-sidebar-cropped-thumb.png || http://folderslice.googlecode.com/svn/trunk/screenshots/desktop-thumb.png ||
 
+*Folderslice is a _free_ Windows Vista Sidebar gadget that makes it simple (finally) to find out where all that space on your hard drive has gone.*
 
+Screenshots:
 
+http://folderslice.googlecode.com/svn/trunk/screenshots/sidebar-thumb.png
+http://folderslice.googlecode.com/svn/trunk/screenshots/flyout-and-sidebar-cropped-thumb.png
+http://folderslice.googlecode.com/svn/trunk/screenshots/desktop-thumb.png
+
+For more information, please visit the wiki.
