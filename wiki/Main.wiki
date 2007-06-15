@@ -17,9 +17,4 @@ The only requirement is that you have Microsoft Windows Vista.  The plug-in is i
   # [Usage Usage]
   # [TechnicalDetails Technical Details]
 
-
-
-
-
-
-
+[http://getfirefox.com http://www.mozilla.org/products/firefox/buttons/getfirefox_large2.png]
