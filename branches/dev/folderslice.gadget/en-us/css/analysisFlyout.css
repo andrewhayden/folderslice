@@ -1,0 +1,221 @@
+*
+{
+    font-family: sans-serif;
+    font-size: 12px;
+    margin: 0px;
+    padding: 0px;
+    /* color: rgb(255,255,255); */
+    color: rgb(225,225,225);
+}
+
+body
+{
+    width: 620px;
+    height: 620px;
+    overflow: hidden;
+    background-image: url('../images/flyout-background.png');
+    background-attachment: fixed;
+    background-position: top left;
+    background-repeat: no-repeat;
+}
+
+A:link, A:visited
+{
+    color: rgb(225,225,225);
+}
+
+A:hover
+{
+    color: rgb(0,255,0);
+}
+
+A.childEntryNavigationLink:link
+{
+    color: rgb(255,255,255);
+}
+
+A.childEntryNavigationLink:hover
+{
+    color: rgb(0,255,0);
+}
+
+v\:*
+{
+    behavior: url(#default#VML);
+}
+
+div.childEntry, div.childSummary
+{
+    height: 60px;
+    width: 600px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+div.childEntry
+{
+    width: 580px;
+}
+
+div.childSummary
+{
+    height: 128px;
+}
+
+div.childEntrySwatch
+{
+    float: left;
+    width: 80px;
+    height: 60px;
+}
+
+div.childSummaryPieWrapper
+{
+    background-image: url('../images/folder-128x128.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 128px;
+    height: 128px;
+    float: left;
+}
+
+div.childSummaryPie
+{
+    width: 90px;
+    height: 90px;
+    position: absolute;
+    left: 19px;
+    top: 29px;
+}
+
+div.childEntrySwatch
+{
+    /* swatch is 32x32, and we want it centered... */
+    width: 60px;
+    position: relative;
+    left: 14px;
+    top: 14px;
+}
+
+*.childEntrySwatchShape
+{
+    width: 32px;
+    height: 32px;
+}
+
+div.childEntryText, div.childSummaryText
+{
+    float: right;
+    width: 520px;
+    height: 60px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+div.childSummaryText
+{
+    width: 472px;
+    height: 120px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+*.childEntryExploreAction
+{
+    background-image: url("../images/folder.png");
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+}
+
+span.childEntryLocation, span.childEntrySize, span.childEntryFileCount,
+span.childEntryNavigation
+{
+    width: 520px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+a.childEntryNavigationLink
+{
+    width: auto;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+span.childSummaryTitle
+{
+    font-size: 140%;
+    font-weight: bold;
+}
+
+a.childEntryNavigationLink
+{
+    font-weight: bold;
+    font-size: 140%;
+}
+
+div.summaryWrapper
+{
+    width: 620px;
+    height: 128px;
+}
+
+/* This is a trick used to hide the horizontal scrollbar.
+ * Since IE7 hasn't fixed their bug with "vertical scrollbar
+ * layout causes the innerWidth of the page to change, forcing
+ * display of a horizontal scrollbar" bug, we will simply clip
+ * the bottom scrollbar with CSS-fu, using a wrapper with
+ * hidden overflow. */
+div.childOuterWrapper
+{
+    width: 610px;
+    height: 475px;
+    overflow: hidden;
+}
+
+div.childWrapper
+{
+    /* 620x500 */
+    width: 610px;
+    height: 495px;
+    overflow: scroll;
+    border-top: 1px solid white;
+}
+
+span.childSummaryParentPie
+{
+    width: 32px;
+    height: 32px;
+    position: absolute;
+    top: 10px;
+    left: 5px;
+}
+
+span.childSummaryDetails, span.childSummaryTitle,
+childSummaryRefreshSpan, childSummaryUpOneLevelSpan
+{
+    width: 472px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+span.childSummaryRefreshAction
+{
+    background-image: url("../images/refresh-dark.png");
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+}
+
+span.childSummaryUpOneLevelAction
+{
+    background-image: url("../images/up-dark.png");
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+}
