@@ -1321,11 +1321,7 @@ function tallyFolderSize(invocationCounter)
         if (ok)
         {
             // "System.Shell.Item.isFile" is currently broken (26 May 2007)
-            if (entry.isLink)
-            {
-                // Ignore links.
-            }
-            else if (entry.isFolder)
+            if (entry.isFolder)
             {
                 // A directory, or a file.  Note that ZIP files are considered
                 // directories.
@@ -1366,8 +1362,8 @@ function tallyFolderSize(invocationCounter)
             }
             else
             {
-                // Not a directory, not a link.
-                // Must be a file!
+                // Not a directory, might be a "link" (that is, a shortcut).
+                // Either way, must be a file!
                 gadgetState.tallySizeBytes += entry.size;
                 gadgetState.numFiles++;
                 gadgetState.visited[tallyState.target.path].numImmediateChildren++;
