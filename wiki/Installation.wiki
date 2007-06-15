@@ -3,6 +3,14 @@
 *>>> Please note that this software will only function in Windows Vista.*
 Folderslice is a sidebar gadget.  The sidebar is only found in Windows Vista, so you will not be able to use this tool under any prior version of Windows (XP, 2000, 98...) nor any other operating system (linux, UNIX, MacOS...).
 
+= In Internet Explorer 7+ =
+  # Navigate to the [http://code.google.com/p/folderslice/downloads/list Download List]
+  # Select the version you wish to download.
+  # Right-click on the version you wish to download and choose "Save target as..."
+  # Select a folder to which the gadget should be downloaded.
+  # When the download completes, open the folder and double-click on the file.
+  # You will be notified that the publisher of the gadget could not be verified.  Click "Install" (if you are concerned about this, the download link from Google provides a hash you can check against the file you have downloaded).
+
 = In Mozilla Firefox =
   # Navigate to the [http://code.google.com/p/folderslice/downloads/list Download List]
   # Select the version you wish to download.
@@ -13,21 +21,10 @@ Folderslice is a sidebar gadget.  The sidebar is only found in Windows Vista, so
     # Navigate to the folder where the file was downloaded and double-click on the file.
   # You will be notified that the publisher of the gadget could not be verified.  Click "Install" (if you are concerned about this, the download link from Google provides a hash you can check against the file you have downloaded).
 
-= In Internet Explorer 7+ =
-  # Navigate to the [http://code.google.com/p/folderslice/downloads/list Download List]
-  # Select the version you wish to download.
-  # Left-click on the version you wish to download.
-  # If prompted to save or open the file:
-    # Select "Open"
-    # If Vista security is enabled, you will be notified that Window Sidebar wants to open content on your computer; click "Allow".
-  # If not prompted to save or open the file, and nothing happens:
-    # Navigate to the folder where the file was downloaded and double-click on the file.
-  # You will be notified that the publisher of the gadget could not be verified.  Click "Install" (if you are concerned about this, the download link from Google provides a hash you can check against the file you have downloaded).
-
 = Troubleshooting =
   * If you get the error message "This is not a valid gadget package":
     Internet Explorer 7 seems to have trouble downloading ".gadget" files from Google's projects (entertainingly, it works in IE 6 - not terribly useful since its not included in Vista).  Until this is fixed, use the following workaround:
-    # Instead of left-clicking on the file as described in the previous steps, right-click and choose "Save target as..."
+    # Instead of left-clicking on the file to download it, right-click and choose "Save target as..."
     # Select a folder to which the gadget should be downloaded
     # When the download completes, open the folder and double-click on the file.
     # You will be notified that the publisher of the gadget could not be verified.  Click "Install" (if you are concerned about this, the download link from Google provides a hash you can check against the file you have downloaded).
