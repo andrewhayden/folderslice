@@ -116,12 +116,12 @@ div.childEntryText, div.childSummaryText
 div.childSummaryText
 {
     width: 472px;
-    height: 120px;
+    height: 128px;
     overflow: hidden;
     white-space: nowrap;
 }
 
-*.childEntryExploreAction
+*.childEntryExploreAction, *.childSummaryExploreAction
 {
     background-image: url("../images/folder.png");
     background-repeat: no-repeat;
@@ -195,11 +195,18 @@ span.childSummaryParentPie
 }
 
 span.childSummaryDetails, span.childSummaryTitle,
-childSummaryRefreshSpan, childSummaryUpOneLevelSpan
+childSummaryRefreshSpan, childSummaryUpOneLevelSpan,
+childSummaryDisclaimer
 {
     width: 472px;
     overflow: hidden;
     white-space: nowrap;
+}
+
+span.childSummaryDisclaimer
+{
+    font-size: 80%;
+    font-style: italic;
 }
 
 span.childSummaryRefreshAction
