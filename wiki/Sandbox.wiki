@@ -12,15 +12,5 @@ Add your content here.  Format your content with:
   * Headings, paragraphs, and lists
   * Automatic links to other wiki pages
 
-
-*Folderslice is a _free_ Windows Vista Sidebar gadget that makes it simple (finally) to find out where all that space on your hard drive has gone.*
-
-Screenshots:
-
-|| Docked || Showing Details || On a Clean Desktop ||
-|| [http://folderslice.googlecode.com/svn/trunk/screenshots/sidebar.png http://folderslice.googlecode.com/svn/trunk/screenshots/sidebar-thumb.png ] || [http://folderslice.googlecode.com/svn/trunk/screenshots/flyout-and-sidebar-cropped.png http://folderslice.googlecode.com/svn/trunk/screenshots/flyout-and-sidebar-cropped-thumb.png] || [http://folderslice.googlecode.com/svn/trunk/screenshots/desktop.png http://folderslice.googlecode.com/svn/trunk/screenshots/desktop-thumb.png] ||
-
-
-For more information, please visit the wiki.
-
-
+* [http://www.andrewlynchhayden.com/folderslice/folderslice.gadget Download latest version] (0.9.1, 18 June 2007)
+  Download hosted at [http://www.andrewlynchhayden.com andrewlynchhayden.com]; [http://code.google.com/p/folderslice/downloads/detail?name=folderslice-0.9.1.gadget&can=2&q= SHA1 checksum]
