@@ -221,12 +221,16 @@ function createChildSummaryContainer(containerDocument, containerElement)
     var detailsSpan = containerDocument.createElement("span");
     var details2Span = containerDocument.createElement("span");
     var details3Span = containerDocument.createElement("span");
+    var disclaimerSpan = containerDocument.createElement("span");
     var refreshSpan = containerDocument.createElement("span");
     var refreshAction = containerDocument.createElement("span");
     var refreshLink = containerDocument.createElement("a");
     var upOneLevelSpan = containerDocument.createElement("span");
     var upOneLevelAction = containerDocument.createElement("span");
     var upOneLevelLink = containerDocument.createElement("a");
+    var exploreSpan = containerDocument.createElement("span");
+    var exploreAction = containerDocument.createElement("span");
+    var exploreLink = containerDocument.createElement("a");
 
     // Assign class
     contentDiv.className='childSummary';
@@ -238,18 +242,24 @@ function createChildSummaryContainer(containerDocument, containerElement)
     detailsSpan.className='childSummaryDetails';
     details2Span.className='childSummaryDetails';
     details3Span.className='childSummaryDetails';
+    disclaimerSpan.className='childSummaryDisclaimer';
     refreshSpan.className='childSummaryRefreshSpan';
     refreshAction.className='childSummaryRefreshAction';
     refreshLink.className='childSummaryRefreshLink';
     upOneLevelSpan.className='childSummaryUpOneLevelSpan';
     upOneLevelAction.className='childSummaryUpOneLevelAction';
     upOneLevelLink.className='childSummaryUpOneLevelLink';
+    exploreSpan.className='childSummaryExploreSpan';
+    exploreAction.className='childSummaryExploreAction';
+    exploreLink.className='childSummaryExploreLink';
 
     // Assemble in reverse order...
     refreshSpan.appendChild(refreshAction);
     refreshSpan.appendChild(refreshLink);
     upOneLevelSpan.appendChild(upOneLevelAction);
     upOneLevelSpan.appendChild(upOneLevelLink);
+    exploreSpan.appendChild(exploreAction);
+    exploreSpan.appendChild(exploreLink);
     textDiv.appendChild(titleSpan);
     textDiv.appendChild(containerDocument.createElement("br"));
     textDiv.appendChild(detailsSpan);
@@ -261,6 +271,10 @@ function createChildSummaryContainer(containerDocument, containerElement)
     textDiv.appendChild(refreshSpan);
     textDiv.appendChild(containerDocument.createElement("br"));
     textDiv.appendChild(upOneLevelSpan);
+    textDiv.appendChild(containerDocument.createElement("br"));
+    textDiv.appendChild(exploreSpan);
+    textDiv.appendChild(containerDocument.createElement("br"));
+    textDiv.appendChild(disclaimerSpan);
     pieWrapper.appendChild(pieDiv);
     pieWrapper.appendChild(pieDiv2);
     contentDiv.appendChild(pieWrapper);
@@ -280,12 +294,16 @@ function createChildSummaryContainer(containerDocument, containerElement)
     containerElement.folderslice.detailsSpan = detailsSpan;
     containerElement.folderslice.details2Span = details2Span;
     containerElement.folderslice.details3Span = details3Span;
+    containerElement.folderslice.disclaimerSpan = disclaimerSpan;
     containerElement.folderslice.refreshSpan = refreshSpan;
     containerElement.folderslice.refreshAction = refreshAction;
     containerElement.folderslice.refreshLink = refreshLink;
     containerElement.folderslice.upOneLevelSpan = upOneLevelSpan;
     containerElement.folderslice.upOneLevelAction = upOneLevelAction;
     containerElement.folderslice.upOneLevelLink = upOneLevelLink;
+    containerElement.folderslice.exploreSpan = exploreSpan;
+    containerElement.folderslice.exploreAction = exploreAction;
+    containerElement.folderslice.exploreLink = exploreLink;
 
     // Attach to container.
     containerElement.appendChild(contentDiv);
@@ -844,6 +862,7 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
     var formattedSize = formatSizeNice(targetSizeBytes);
     var percentUsedSpaceUsedByFolder = targetSizeBytes / (usedSpaceMB * 1024 * 1024);
     var formattedPercent = (percentUsedSpaceUsedByFolder < 0.1 ? "0" : "") + (percentUsedSpaceUsedByFolder * 100).toFixed(1);
+    var bakedPath = hackPathForCall(gadgetState.target.path);
 
     if (element.folderslice.titleSpan)
     {
@@ -852,7 +871,7 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
 
     if (element.folderslice.detailsSpan)
     {
-        element.folderslice.detailsSpan.innerText = "Contains " + formattedPercent + "% of the space used on your hard drive (" + formattedSize + ").";
+        element.folderslice.detailsSpan.innerText = "Contains " + formattedPercent + "% of the space used on your hard drive (" + formattedSize + ").*";
     }
 
     var numFiles = gadgetState.visited[gadgetState.target.path].numImmediateChildren;
@@ -877,7 +896,7 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
         {
             if (numFilesInChildren > 0)
             {
-                element.folderslice.details3Span.innerText = "There are " + numFilesInChildren + (numFiles > 0 ? "additional" : "") + " files within the " + numChildren + " folders listed below.";
+                element.folderslice.details3Span.innerText = (numFiles > 0 ? "There are " : "However, there are ") + numFilesInChildren + (numFiles > 0 ? "additional" : "") + " files within the " + numChildren + " folders listed below.";
             }
             else
             {
@@ -888,6 +907,11 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
         {
             element.folderslice.details3Span.innerText = "There are no additional folders or files within this folder.";
         }
+    }
+
+    if (element.folderslice.disclaimerSpan)
+    {
+        element.folderslice.disclaimerSpan.innerText="* Does not include files and folders in the Recycle Bin."; 
     }
 
     if (element.folderslice.refreshLink)
@@ -903,6 +927,18 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
     {
         element.folderslice.upOneLevelLink.innerText = "Display the details for this folder's parent...";
         element.folderslice.upOneLevelLink.href="javascript:flyoutUpOneLevel();";
+    }
+
+    if (element.folderslice.exploreAction)
+    {
+        // Set on-click
+        element.folderslice.exploreAction.onclick=new Function("flyoutExplore('" + bakedPath + "');");
+    }
+
+    if (element.folderslice.exploreLink)
+    {
+        element.folderslice.exploreLink.href="javascript:flyoutExplore('" + bakedPath + "');";
+        element.folderslice.exploreLink.innerText="Explore this folder...";
     }
 
     makePieWithSlices(element.folderslice.pieDiv, pieX, pieY, sliceOffset, pieRadius,
@@ -1321,11 +1357,7 @@ function tallyFolderSize(invocationCounter)
         if (ok)
         {
             // "System.Shell.Item.isFile" is currently broken (26 May 2007)
-            if (entry.isLink)
-            {
-                // Ignore links.
-            }
-            else if (entry.isFolder)
+            if (entry.isFolder)
             {
                 // A directory, or a file.  Note that ZIP files are considered
                 // directories.
@@ -1366,8 +1398,8 @@ function tallyFolderSize(invocationCounter)
             }
             else
             {
-                // Not a directory, not a link.
-                // Must be a file!
+                // Not a directory, might be a "link" (that is, a shortcut).
+                // Either way, must be a file!
                 gadgetState.tallySizeBytes += entry.size;
                 gadgetState.numFiles++;
                 gadgetState.visited[tallyState.target.path].numImmediateChildren++;
