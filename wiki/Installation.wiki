@@ -4,11 +4,15 @@
 Folderslice is a sidebar gadget.  The sidebar is only found in Windows Vista, so you will not be able to use this tool under any prior version of Windows (XP, 2000, 98...) nor any other operating system (linux, UNIX, MacOS...).
 
 = In Internet Explorer 7+ =
+*Note* : If you get the error message "This is not a valid gadget package", please see the Troubleshooting section at the bottom of the page.
   # Navigate to the [http://code.google.com/p/folderslice/downloads/list Download List]
   # Select the version you wish to download.
-  # Right-click on the version you wish to download and choose "Save target as..."
-  # Select a folder to which the gadget should be downloaded.
-  # When the download completes, open the folder and double-click on the file.
+  # Left-click on the version you wish to download.
+  # If prompted to save or open the file:
+    # Select "Open"
+    # If Vista security is enabled, you will be notified that Window Sidebar wants to open content on your computer; click "Allow".
+  # If not prompted to save or open the file, and nothing happens:
+    # Navigate to the folder where the file was downloaded and double-click on the file.
   # You will be notified that the publisher of the gadget could not be verified.  Click "Install" (if you are concerned about this, the download link from Google provides a hash you can check against the file you have downloaded).
 
 = In Mozilla Firefox =
@@ -28,3 +32,8 @@ Folderslice is a sidebar gadget.  The sidebar is only found in Windows Vista, so
     # Select a folder to which the gadget should be downloaded
     # When the download completes, open the folder and double-click on the file.
     # You will be notified that the publisher of the gadget could not be verified.  Click "Install" (if you are concerned about this, the download link from Google provides a hash you can check against the file you have downloaded).
+
+
+
+
+
