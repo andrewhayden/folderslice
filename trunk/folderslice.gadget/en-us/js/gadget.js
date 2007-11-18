@@ -176,8 +176,21 @@ function flyoutLoaded()
     }
 }
 
+function flyoutDoneLoading()
+{
+    var element = System.Gadget.Flyout.document.getElementById('progress');
+    element.style.visibility="hidden";
+}
+
+function flyoutStartLoading()
+{
+    var element = System.Gadget.Flyout.document.getElementById('progress');
+    element.style.visibility="visible";
+}
+
 function flyoutLoadedInternal()
 {
+    flyoutStartLoading();
     var element = System.Gadget.Flyout.document.getElementById('content');
     if (element)
     {
@@ -854,7 +867,6 @@ function updateChildrenResults(pieDivId)
  */
 function flyoutLoop()
 {
-debug("in flyout loop");
     // Check if we are executing the user's latest request.
     if (flyoutState.invocationCounter != gadgetState.invocationCounter)
     {
@@ -866,6 +878,7 @@ debug("in flyout loop");
     if (flyoutState.index >= flyoutState.numChildren)
     {
         // No work to be done.  We are finished!
+        flyoutDoneLoading();
         return false;
     }
 
