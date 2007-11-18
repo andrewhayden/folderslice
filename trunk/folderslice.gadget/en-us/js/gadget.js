@@ -1079,10 +1079,11 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
         element.folderslice.refreshLink.innerText = "Refresh the details for this folder...";
         element.folderslice.refreshLink.href="javascript:flyoutRefresh();";
     }
-    else
+    else if (DEBUG)
     {
         debug("no refresh link element...");
     }
+
     if (element.folderslice.upOneLevelLink)
     {
         element.folderslice.upOneLevelLink.innerText = "Display the details for this folder's parent...";
@@ -1623,7 +1624,10 @@ function isArchive(path)
 
 function debug(text)
 {
-    document.getElementById("debugDiv").innerText += "\n" + text;
+    if (DEBUG)
+    {
+        document.getElementById("debugDiv").innerText += "\n" + text;
+    }
 }
 
 /**
