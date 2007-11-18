@@ -70,9 +70,15 @@ function setPieCoordinateSpace(size)
  *                      by that many pixels.
  * @param sliceSizes    array containing the sizes of the slices, in degrees,
  *                      to take out of the pie;
- *                      the code will attempt to draw any non-zero size,
- *                      so it is up to the caller to zero the slice size if it
- *                      is too small to reasonably be shown.
+ *                      the code will attempt to draw any slice whose size is
+ *                      greater than that specified by...
+ * @param minSliceSize  any slice less than or equal to this size is not
+ *                      drawn.  This helps when the pie has a few big slices
+ *                      but many slices too small to reasonably show.  The
+ *                      omitted slices are still included in the calculations
+ *                      for where the next slice begins, so if there are many
+ *                      slices below the threshold there may be a gap in the
+ *                      pie.
  * @param pointsInFullCircle
  *                      the number of points that would be used to smoothly
  *                      interpolate a polygon representation of the full
@@ -88,7 +94,7 @@ function setPieCoordinateSpace(size)
  *                      blue).  If there are not enough colors for each slice
  *                      the colors repeat again from the beginning.
  */
-function makePieWithSlices(element, centerX, centerY, floatOffset, radius, sliceSizes, pointsInFullCircle, pieColor1, pieColor2, sliceColors)
+function makePieWithSlices(element, centerX, centerY, floatOffset, radius, sliceSizes, minSliceSize, pointsInFullCircle, pieColor1, pieColor2, sliceColors)
 {
     // Clear old contents...
     element.innerHTML = "";
@@ -116,7 +122,7 @@ function makePieWithSlices(element, centerX, centerY, floatOffset, radius, slice
         var sliceSize = sliceSizes[index];
         var color1 = sliceColors[index % sliceColors.length].color1;
         var color2 = sliceColors[index % sliceColors.length].color2;
-        if (sliceSize != 0)
+        if (sliceSize > minSliceSize)
         {
             // Offset must be scaled in x/y according to sin/cos of the angle...
             var sliceStartAngle = 360 - totalSliceSize + rotation + sliceSizeDone;
@@ -131,8 +137,9 @@ function makePieWithSlices(element, centerX, centerY, floatOffset, radius, slice
                 Math.round(centerY - offsetY),
                 radius, sliceStartAngle, sliceSize, pointsInFullCircle,
                 color1, color2, 180 - sliceCenter);
-            sliceSizeDone += sliceSize;
         }
+
+        sliceSizeDone += sliceSize;
     }
 }
 

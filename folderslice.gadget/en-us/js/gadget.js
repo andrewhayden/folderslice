@@ -8,6 +8,8 @@ var archiveExtensions = [
 // If we get beyond yottabytes (10^24) while using JavaScript, the future is bleak indeed.
 var sizeUnits = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 var gadgetState = new Object;
+var flyoutState = new Object;
+var sizingInfo = new Object;
 var DEBUG = false;
 
 function startup()
@@ -45,12 +47,23 @@ function startup()
 
 function startupInternal()
 {
+    // Information for the various sizing options.
+    sizingInfo.small = new Object;
+    sizingInfo.small.width = 130;
+    sizingInfo.small.height = 57; // minimum height for a gadget (undocumented)
+    sizingInfo.small.background="images/background-small.png";
+    sizingInfo.normal = new Object;
+    sizingInfo.normal.width = 130;
+    sizingInfo.normal.height = 245;
+    sizingInfo.normal.background="images/background.png";
+
     // Init state object
     gadgetState.visited = new Array;
     gadgetState.numVisited = 0;
     gadgetState.target = null;
     gadgetState.timerId = 0;
     gadgetState.invocationCounter = 0;
+    gadgetState.lastDetailsInvocationCounter = -1;
     gadgetState.maxFilesPerInterval = 100;
     gadgetState.restIntervalMillis = 25;
     gadgetState.tallySizeBytes = 0;
@@ -82,16 +95,22 @@ function startupInternal()
     gadgetState.childSliceColors[2].color2 = "#000040";
     gadgetState.showFlyoutOnFinish = false;
 
+    // Flyout state information
+    flyoutState.invocationCounter = gadgetState.invocationCounter - 1;
+    flyoutState.restIntervalMillis = 25;
+
     // Show defaults.
     document.getElementById(gadgetState.cancelButtonId).noResize = true;
     document.getElementById('resultsScreen').noResize = true;
     document.getElementById('processingScreen').noResize = true;
+    document.getElementById('titleScreen').noResize = true;
     document.getElementById('childrenDiv0').noResize = true;
     document.getElementById('childrenDiv1').noResize = true;
     document.getElementById('childrenDiv2').noResize = true;
     document.getElementById('parentGoButton').noResize = true;
     document.getElementById(gadgetState.progressIndicatorId).noResize = true;
 
+    showTitleScreen();
     setVisible(gadgetState.progressIndicatorId, false);
     setVisible(gadgetState.cancelButtonId, false);
     setEnabled(gadgetState.cancelButtonId, false);
@@ -99,8 +118,6 @@ function startupInternal()
     setVisible('childrenDiv1', false);
     setVisible('childrenDiv2', false);
     setVisible('parentGoButton', false);
-    showProcessingScreen();
-    showDefaultProcessingText();
 
     // Taste the rainbow, ride the walrus.
     var rainbow = new Array(0);
@@ -120,8 +137,12 @@ function startupInternal()
 
 function showAnalysisFlyout()
 {
-    System.Gadget.Flyout.file =  'analysisFlyout.html';
+    if (gadgetState.lastDetailsInvocationCounter != gadgetState.invocationCounter)
+    {
+        System.Gadget.Flyout.file =  'analysisFlyout.html';
+    }
     System.Gadget.Flyout.show = true;
+    gadgetState.lastDetailsInvocationCounter = gadgetState.invocationCounter;
 }
 
 function hideAnalysisFlyout()
@@ -386,7 +407,7 @@ function cancel()
         clearTimeout(gadgetState.timerId);
         gadgetState.timerId = 0;
         setVisible(gadgetState.progressIndicatorId, false);
-        showDefaultProcessingText();
+        showTitleScreen();
 
         // Clean up right away to avoid holding onto memory we don't need
         gadgetState.visited = null;
@@ -396,22 +417,25 @@ function cancel()
     }
 }
 
+function setSize(size)
+{
+    document.body.style.pixelWidth=size.width;
+    document.body.style.pixelHeight=size.height;
+    document.body.style.backgroundImage="url(\"" + size.background + "\")"; 
+}
+
 function showProcessingScreen()
 {
-    setVisible('childrenDiv0', false);
-    setVisible('childrenDiv1', false);
-    setVisible('childrenDiv2', false);
-    setVisible('parentGoButton', false);
-    setVisible('resultsScreen', false);
+    setSize(sizingInfo.small);
+    hideResultsScreen();
+    hideTitleScreen();
     setVisible('processingScreen', true);
 }
 
-function showDefaultProcessingText()
+function hideProcessingScreen()
 {
     setVisible(gadgetState.cancelButtonId, false);
-    setEnabled(gadgetState.cancelButtonId, false);
-    document.getElementById('processingLabel').innerText="Drag a drive or folder";
-    document.getElementById('processingValue').innerText="here to begin...";
+    setVisible('processingScreen', false);
 }
 
 function showProcessingProgressText()
@@ -419,18 +443,42 @@ function showProcessingProgressText()
     setEnabled(gadgetState.cancelButtonId, true);
     setVisible(gadgetState.cancelButtonId, true);
     document.getElementById('processingLabel').innerText="Processing...";
-    document.getElementById('processingValue').innerText="";
 }
 
 function updateProgress(numFiles)
 {
-    document.getElementById('processingValue').innerText=numFiles + " files";
+    document.getElementById('processingLabel').innerText=numFiles + " files";
 }
 
 function showResultsScreen()
 {
-    document.getElementById('processingScreen').style.visibility="hidden";
-    document.getElementById('resultsScreen').style.visibility="visible";
+    setSize(sizingInfo.normal);
+    hideProcessingScreen();
+    hideTitleScreen();
+    setVisible('resultsScreen', true);
+}
+
+function hideResultsScreen()
+{
+    setVisible('childrenDiv0', false);
+    setVisible('childrenDiv1', false);
+    setVisible('childrenDiv2', false);
+    setVisible('parentGoButton', false);
+    setVisible('resultsScreen', false);
+}
+
+function showTitleScreen()
+{
+    setSize(sizingInfo.small);
+    hideProcessingScreen();
+    hideResultsScreen();
+    hideAnalysisFlyout();
+    setVisible('titleScreen', true);
+}
+
+function hideTitleScreen()
+{
+    setVisible('titleScreen', false);
 }
 
 function setVisible(elementId, visible)
@@ -543,11 +591,7 @@ function kickOff(droppedItem)
 
     if (!target.isFolder)
     {
-        showDefaultProcessingText();
-        setVisible(gadgetState.progressIndicatorId, false);
-        setVisible(gadgetState.cancelButtonId, false);
-        setEnabled(gadgetState.cancelButtonId, false);
-        showProcessingScreen();
+        showTitleScreen();
         return;
     }
     else
@@ -644,13 +688,6 @@ function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocatio
         }
     }
 
-/*
-    element = flyoutElement.folderslice.fileCountSpan;
-    if (element)
-    {
-        element.innerText = numFiles + " files";
-    }
-*/
     if (flyoutElement.folderslice.isChild)
     {
         // Special child entry processing!
@@ -799,7 +836,7 @@ function updateTargetResultsInternal(isFlyout, pieDiv, flyoutElement)
     var sliceSizes = new Array;
     sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
     makePieWithSlices(pieDiv, pieX, pieY, sliceOffset, pieRadius,
-        sliceSizes, 100,
+        sliceSizes, .5, 100,
         gadgetState.pieColors.color1,
         gadgetState.pieColors.color2,
         gadgetState.childSliceColors);
@@ -810,27 +847,61 @@ function updateChildrenResults(pieDivId)
     updateChildrenResultsInternal(false, document.getElementById(pieDivId), undefined);
 }
 
+
+/**
+ * Invoked on the timer.
+ * Accumulates data in gadgetState.
+ */
+function flyoutLoop()
+{
+debug("in flyout loop");
+    // Check if we are executing the user's latest request.
+    if (flyoutState.invocationCounter != gadgetState.invocationCounter)
+    {
+        // Uh oh.  Stop!  A different flyout is up, or will be.
+        return false;
+    }
+
+    // If we aren't behind the times, see if there is work to be done.
+    if (flyoutState.index >= flyoutState.numChildren)
+    {
+        // No work to be done.  We are finished!
+        return false;
+    }
+
+    var index = flyoutState.index;
+    var childEntry = System.Shell.itemFromPath(flyoutState.sortedChildren[index].path);
+    var childElement = System.Gadget.Flyout.document.createElement("div");
+    createChildResultContainer(
+        System.Gadget.Flyout.document, childElement,
+        index, flyoutState.numChildren);
+    
+    updateFlyoutStats(childElement, index, flyoutState.numChildren,
+        childEntry.path, childEntry.name, flyoutState.sliceSizes[index],
+        flyoutState.sortedChildren[index].size, flyoutState.sortedChildren[index].numFiles,
+        flyoutState.sliceColors[index].color1,
+        flyoutState.sliceColors[index].color2);
+    flyoutState.element.appendChild(childElement);
+
+    // Increment index and reschedule.
+    flyoutState.index++;
+    flyoutState.timerId =
+        setTimeout('flyoutLoop()', flyoutState.restIntervalMillis);
+}
+
 function updateFlyoutChildrenResults(element, sliceSizes, sliceColors)
 {
     // Fill in children.
-    var sortedChildren = gadgetState.sortedTargetChildren;
-    var numChildren = sortedChildren.length;
-    var targetSizeBytes = gadgetState.tallySizeBytes;
-    for (var index=0; index<numChildren; index++)
-    {
-        var childEntry = System.Shell.itemFromPath(sortedChildren[index].path);
-        var childElement = System.Gadget.Flyout.document.createElement("div");
-        createChildResultContainer(
-            System.Gadget.Flyout.document, childElement,
-            index, numChildren);
-        
-        updateFlyoutStats(childElement, index, numChildren,
-            childEntry.path, childEntry.name, sliceSizes[index],
-            sortedChildren[index].size, sortedChildren[index].numFiles,
-            sliceColors[index].color1,
-            sliceColors[index].color2);
-        element.appendChild(childElement);
-    }
+    flyoutState.invocationCounter = gadgetState.invocationCounter;
+    flyoutState.sortedChildren = gadgetState.sortedTargetChildren;
+    flyoutState.numChildren = flyoutState.sortedChildren.length;
+    flyoutState.targetSizeBytes = gadgetState.tallySizeBytes;
+    flyoutState.element = element;
+    flyoutState.sliceSizes = sliceSizes;
+    flyoutState.sliceColors = sliceColors;
+    flyoutState.index = 0;
+    flyoutState.timerId =
+        setTimeout('flyoutLoop()', flyoutState.restIntervalMillis);
 }
 
 function updateFlyoutSummaryResults(element, sliceSizes, childColors)
@@ -896,7 +967,7 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
         {
             if (numFilesInChildren > 0)
             {
-                element.folderslice.details3Span.innerText = (numFiles > 0 ? "There are " : "However, there are ") + numFilesInChildren + (numFiles > 0 ? "additional" : "") + " files within the " + numChildren + " folders listed below.";
+                element.folderslice.details3Span.innerText = (numFiles > 0 ? "There are " : "However, there are ") + numFilesInChildren + (numFiles > 0 ? " additional" : "") + " files within the " + numChildren + " folders listed below.";
             }
             else
             {
@@ -941,8 +1012,9 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
         element.folderslice.exploreLink.innerText="Explore this folder...";
     }
 
-    makePieWithSlices(element.folderslice.pieDiv, pieX, pieY, sliceOffset, pieRadius,
-        sliceSizes, 100,
+    makePieWithSlices(
+        element.folderslice.pieDiv, pieX, pieY, sliceOffset, pieRadius,
+        sliceSizes, .5, 100,
         gadgetState.pieColors.color1,
         gadgetState.pieColors.color2,
         childColors);
@@ -968,8 +1040,9 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
 
     sliceSizes = new Array;
     sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
-    makePieWithSlices(element.folderslice.pieDiv2, pieX, pieY, sliceOffset, pieRadius,
-        sliceSizes, 100,
+    makePieWithSlices(
+        element.folderslice.pieDiv2, pieX, pieY, sliceOffset, pieRadius,
+        sliceSizes, .5, 100,
         gadgetState.pieColors.color1,
         gadgetState.pieColors.color2,
         gadgetState.childSliceColors);
@@ -1047,7 +1120,7 @@ function updateChildrenResultsInternal(isFlyout, pieDiv, flyoutElement)
     }
 
     makePieWithSlices(pieDiv, pieX, pieY, sliceOffset, pieRadius,
-        sliceSizes, 100,
+        sliceSizes, .5, 100,
         gadgetState.pieColors.color1,
         gadgetState.pieColors.color2,
         gadgetState.childSliceColors);
@@ -1254,8 +1327,8 @@ function tallyHelper(invocationCounter)
 {
     while(tallyFolderSize(invocationCounter))
     {
-        // truly nothing here.  This is just a while loop
-        // that goes forever...
+        // Truly nothing here.  This is just a while loop
+        // that goes until all tallying is complete.
     }
 }
 
