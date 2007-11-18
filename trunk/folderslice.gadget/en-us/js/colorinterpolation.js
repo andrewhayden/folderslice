@@ -17,6 +17,7 @@ function colorHexToInts(color)
     rgbArray[0] = new Number(parseInt(trimmed.substr(0,2), 16)); // red
     rgbArray[1] = new Number(parseInt(trimmed.substr(2,2), 16)); // green
     rgbArray[2] = new Number(parseInt(trimmed.substr(4,2), 16)); // blue
+
     return rgbArray;
 }
 
@@ -31,7 +32,7 @@ function colorIntsToHex(rgbArray)
     var hexForm = "";
     for (var x=0; x<3; x++)
     {
-        hexForm += (rgbArray[x].valueOf() < 10 ? "0" : "") + rgbArray[x].toString(16);
+        hexForm += (rgbArray[x].valueOf() < 16 ? "0" : "") + rgbArray[x].toString(16);
     }
     return "#" + hexForm;
 }
@@ -39,9 +40,10 @@ function colorIntsToHex(rgbArray)
 function makeEqualWeightsArray(colorArray)
 {
     var weights = new Array(colorArray.length - 1);
+    var increment = 1 / (colorArray.length - 1);
     for (var index=0; index<colorArray.length - 1; index++)
     {
-        weights[index] = 1 / (colorArray.length - 1);
+        weights[index] = increment;
     }
     return weights;
 }
@@ -103,7 +105,10 @@ function linearInterpolateFromInts(rgbArray1, rgbArray2, percent)
     for (var x=0; x<3; x++)
     {
         var delta = rgbArray2[x].valueOf() - rgbArray1[x].valueOf();
-        result[x] = new Number(rgbArray1[x].valueOf() + Math.round(delta * percent));
+        var value = new Number(rgbArray1[x].valueOf() + Math.round(delta * percent));
+        if (value > 255) value = 255;
+        if (value < 0) value = 0;
+        result[x] = value;
     }
     return result;
 }
