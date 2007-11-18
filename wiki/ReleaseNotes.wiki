@@ -1,0 +1,25 @@
+#summary Release Notes
+
+=== 0.9.3 ===
+_18 November 2007_
+  * Second public release
+  * Gadget starts up in a much more compact mode
+  * Can now discard results, which will return to compact mode, using the Dismiss button on the results screen
+  * Creation of details page is now done on-the-fly instead of all-or-nothing.  This means that the application is much, much, much more responsive when browsing through folders that contain many child folders.  A progress indicator is displayed while this is happening.
+  * Greatly improved the logic for displaying the pie chart and color swatches.  The gadget no longer draws pie slices that would be too small to be useful.
+  * Entries not appearing on the pie chart will also not receive a color swatch, and will all be lumped together in the details list after a descriptive line noting that the remaining items are very small
+  * Fixed weird page-overflow bug in main window that would allow users to drag items along the bottom edge of the window, causing the window to scroll (yay for overflow: hidden)
+  * Cleaned up debug code a bit and made it rock solid; any accidentally-enabled debugging code will no longer attempt to print to a non-existent DIV element
+  * No remaining calls to debug are unqualified (that is, they all check for the debug flag before bothering to call the printing method)
+  * Minor miscellaneous performance enhancements (insignificant speedup, but the code is a tiny bit cleaner as a result)
+
+=== 0.9.1 ===
+_18 June 2007_
+  * First public release
+
+
+
+=== 0.9.0 ===
+_14 June 2007_
+  * Non-public release
+  * Unstable
