@@ -226,3 +226,17 @@ span.childSummaryUpOneLevelAction
     height: 16px;
     margin-right: 5px;
 }
+
+span.childEntryDividerText
+{
+    font-weight: bold;
+    font-size: 14px;
+}
+
+div.childEntryDivider
+{
+    width: 575px;
+    margin-left: 5px;
+    border-bottom: 2px solid white;
+    margin-bottom: 10px;
+}
