@@ -10,6 +10,8 @@ var sizeUnits = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 var gadgetState = new Object;
 var flyoutState = new Object;
 var sizingInfo = new Object;
+var minPercentWorthDrawing = .01; // in range [0,1]
+var minDegreesWorthDrawing = minPercentWorthDrawing * 360;
 var DEBUG = false;
 
 function startup()
@@ -220,16 +222,25 @@ function flyoutLoadedInternal()
         var sortedChildren = gadgetState.sortedTargetChildren;
         var numChildren = sortedChildren.length;
         var targetSizeBytes = gadgetState.visited[gadgetState.target.path].size;
-        var increment = 1 / numChildren;
         var childSizesDegrees = new Array(0);
         var childSizesPercents = new Array(0);
         var childColors = new Array(0);
-
+        
+        var numSignificantChildren = 0;
         for (var index=0; index<numChildren; index++)
         {
             childSizesPercents[index] = sortedChildren[index].size / targetSizeBytes;
             childSizesDegrees[index] = 360* (sortedChildren[index].size / targetSizeBytes);
-            var childIndexAsPercent = (index === 0 ? 0 : index / numChildren);
+            if (childSizesPercents[index] > minPercentWorthDrawing)
+            {
+                numSignificantChildren++;
+            }
+        }        
+
+        var increment = 1 / numSignificantChildren;
+        for (var index=0; index<numSignificantChildren; index++)
+        {
+            var childIndexAsPercent = (index === 0 ? 0 : index / numSignificantChildren);
             childColors[index] = new Object;
             childColors[index].color1 = linearArrayInterpolateFromHex(
                 gadgetState.rainbow, gadgetState.rainbowWeights, childIndexAsPercent);
@@ -343,10 +354,35 @@ function createChildSummaryContainer(containerDocument, containerElement)
     containerElement.appendChild(contentDiv);
 }
 
-function createChildResultContainer(containerDocument, containerElement, childIndex, numChildren)
+function createChildEntryDivider(containerDocument, containerElement)
 {
     var contentDiv = containerDocument.createElement("div");
-    var swatchDiv = containerDocument.createElement("div");
+    var textSpan = containerDocument.createElement("span");
+
+    // Assign class
+    contentDiv.className='childEntryDivider';
+    textSpan.className='childEntryDividerText';
+    textSpan.innerText='The remaining entries each contain less than '
+        + (minPercentWorthDrawing * 100) + '% of the parent folder.'; 
+
+    // Assemble in reverse order...
+    contentDiv.appendChild(textSpan);
+
+    // Marker metadata
+    containerElement.folderslice = new Object;
+    containerElement.folderslice.isChild = false;
+
+    // Set elements as attributes, for easy access
+    containerElement.folderslice.contentDiv = contentDiv;
+    containerElement.folderslice.textSpan = textSpan;
+
+    // Attach to container.
+    containerElement.appendChild(contentDiv);
+}
+
+function createChildResultContainer(containerDocument, containerElement, childIndex, numChildren, makeSwatch)
+{
+    var contentDiv = containerDocument.createElement("div");
     var textDiv = containerDocument.createElement("div");
     var sizeSpan = containerDocument.createElement("span");
     var navigationDiv = containerDocument.createElement("div");
@@ -356,20 +392,32 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     var exploreLinkText= containerDocument.createTextNode("");
 
     // Make color swatch
-    var swatchShape = containerDocument.createElement("v:roundrect");
-    swatchShape.arcSize = "25%";
-    var swatchFill = containerDocument.createElement("v:fill");
-    swatchFill.type="gradient";
+    var swatchShape;
+    var swatchFill;
+    var swatchDiv;
+    if (makeSwatch)
+    {
+        swatchShape = containerDocument.createElement("v:roundrect");
+        swatchShape.arcSize = "25%";
+        swatchShape.className='childEntrySwatchShape';
+
+        swatchFill = containerDocument.createElement("v:fill");
+        swatchFill.type="gradient";
+        swatchFill.className='childEntrySwatchFill';
+        
+        swatchDiv = containerDocument.createElement("div");
+        swatchDiv.className='childEntrySwatch';
+
+        swatchShape.appendChild(swatchFill);
+        swatchDiv.appendChild(swatchShape);
+    }
 
     // Assign class
     contentDiv.className='childEntry';
-    swatchDiv.className='childEntrySwatch';
     textDiv.className='childEntryText';
     sizeSpan.className='childEntrySize';
     navigationDiv.className='childEntryNavigation';
     navigationLink.className='childEntryNavigationLink';
-    swatchShape.className='childEntrySwatchShape';
-    swatchFill.className='childEntrySwatchFill';
     exploreAction.className = 'childEntryExploreAction';
     exploreLink.className = 'childEntryExploreLink';
 
@@ -378,8 +426,6 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     contentDiv.id = "childEntry" + childIndex;
     
     // Assemble in reverse order...
-    swatchShape.appendChild(swatchFill);
-    swatchDiv.appendChild(swatchShape);
     exploreLink.appendChild(exploreLinkText);
     navigationDiv.appendChild(exploreAction);
     navigationDiv.appendChild(exploreLink);
@@ -388,7 +434,10 @@ function createChildResultContainer(containerDocument, containerElement, childIn
     textDiv.appendChild(sizeSpan);
     textDiv.appendChild(containerDocument.createElement("br"));
     textDiv.appendChild(navigationDiv);
-    contentDiv.appendChild(swatchDiv);
+    if (makeSwatch)
+    {
+        contentDiv.appendChild(swatchDiv);
+    }
     contentDiv.appendChild(textDiv);
 
     // Marker metadata
@@ -849,7 +898,7 @@ function updateTargetResultsInternal(isFlyout, pieDiv, flyoutElement)
     var sliceSizes = new Array;
     sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
     makePieWithSlices(pieDiv, pieX, pieY, sliceOffset, pieRadius,
-        sliceSizes, .5, 100,
+        sliceSizes, 0, 100,
         gadgetState.pieColors.color1,
         gadgetState.pieColors.color2,
         gadgetState.childSliceColors);
@@ -885,15 +934,41 @@ function flyoutLoop()
     var index = flyoutState.index;
     var childEntry = System.Shell.itemFromPath(flyoutState.sortedChildren[index].path);
     var childElement = System.Gadget.Flyout.document.createElement("div");
+    var sliceSize = flyoutState.sliceSizesPercents[index];
+    var worthy = sliceSize > minPercentWorthDrawing;
+
+    if (!worthy && flyoutState.doneWithInteresting == false)
+    {
+        // We have hit the lower bound of interesting childen.  Add note to
+        // list...
+        flyoutState.doneWithInteresting = true;
+        var dividerElement = System.Gadget.Flyout.document.createElement("div");
+        createChildEntryDivider(System.Gadget.Flyout.document, dividerElement);
+        flyoutState.element.appendChild(dividerElement);
+    }
+
     createChildResultContainer(
         System.Gadget.Flyout.document, childElement,
-        index, flyoutState.numChildren);
-    
-    updateFlyoutStats(childElement, index, flyoutState.numChildren,
-        childEntry.path, childEntry.name, flyoutState.sliceSizes[index],
-        flyoutState.sortedChildren[index].size, flyoutState.sortedChildren[index].numFiles,
-        flyoutState.sliceColors[index].color1,
-        flyoutState.sliceColors[index].color2);
+        index, flyoutState.numChildren, worthy);
+
+    var color1;
+    var color2;
+    if (worthy)
+    {
+        color1 = flyoutState.sliceColors[index].color1;
+        color2 = flyoutState.sliceColors[index].color2;
+    }
+
+    updateFlyoutStats(
+        childElement,
+        index,
+        flyoutState.numChildren,
+        childEntry.path,
+        childEntry.name,
+        flyoutState.sliceSizesPercents[index],
+        flyoutState.sortedChildren[index].size,
+        flyoutState.sortedChildren[index].numFiles,
+        color1, color2);
     flyoutState.element.appendChild(childElement);
 
     // Increment index and reschedule.
@@ -902,7 +977,7 @@ function flyoutLoop()
         setTimeout('flyoutLoop()', flyoutState.restIntervalMillis);
 }
 
-function updateFlyoutChildrenResults(element, sliceSizes, sliceColors)
+function updateFlyoutChildrenResults(element, sliceSizesPercents, sliceColors)
 {
     // Fill in children.
     flyoutState.invocationCounter = gadgetState.invocationCounter;
@@ -910,11 +985,12 @@ function updateFlyoutChildrenResults(element, sliceSizes, sliceColors)
     flyoutState.numChildren = flyoutState.sortedChildren.length;
     flyoutState.targetSizeBytes = gadgetState.tallySizeBytes;
     flyoutState.element = element;
-    flyoutState.sliceSizes = sliceSizes;
+    flyoutState.sliceSizesPercents = sliceSizesPercents;
     flyoutState.sliceColors = sliceColors;
     flyoutState.index = 0;
+    flyoutState.doneWithInteresting = false;
     flyoutState.timerId =
-        setTimeout('flyoutLoop()', flyoutState.restIntervalMillis);
+        setTimeout('flyoutLoop()', 500);
 }
 
 function updateFlyoutSummaryResults(element, sliceSizes, childColors)
@@ -1027,7 +1103,7 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
 
     makePieWithSlices(
         element.folderslice.pieDiv, pieX, pieY, sliceOffset, pieRadius,
-        sliceSizes, .5, 100,
+        sliceSizes, minDegreesWorthDrawing, 100,
         gadgetState.pieColors.color1,
         gadgetState.pieColors.color2,
         childColors);
@@ -1055,7 +1131,7 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
     sliceSizes[0] = percentUsedSpaceUsedByFolder * 360;
     makePieWithSlices(
         element.folderslice.pieDiv2, pieX, pieY, sliceOffset, pieRadius,
-        sliceSizes, .5, 100,
+        sliceSizes, minDegreesWorthDrawing, 100,
         gadgetState.pieColors.color1,
         gadgetState.pieColors.color2,
         gadgetState.childSliceColors);
@@ -1133,7 +1209,7 @@ function updateChildrenResultsInternal(isFlyout, pieDiv, flyoutElement)
     }
 
     makePieWithSlices(pieDiv, pieX, pieY, sliceOffset, pieRadius,
-        sliceSizes, .5, 100,
+        sliceSizes, 0, 100,
         gadgetState.pieColors.color1,
         gadgetState.pieColors.color2,
         gadgetState.childSliceColors);

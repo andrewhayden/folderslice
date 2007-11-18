@@ -75,10 +75,9 @@ function setPieCoordinateSpace(size)
  * @param minSliceSize  any slice less than or equal to this size is not
  *                      drawn.  This helps when the pie has a few big slices
  *                      but many slices too small to reasonably show.  The
- *                      omitted slices are still included in the calculations
- *                      for where the next slice begins, so if there are many
- *                      slices below the threshold there may be a gap in the
- *                      pie.
+ *                      omitted slices are still included in the calculations,
+ *                      and at the end a single empty slice is created to
+ *                      take up the slack.
  * @param pointsInFullCircle
  *                      the number of points that would be used to smoothly
  *                      interpolate a polygon representation of the full
@@ -113,17 +112,18 @@ function makePieWithSlices(element, centerX, centerY, floatOffset, radius, slice
     {
         makeSlice(element, centerX, centerY, radius,
             pieStartAngle, pieAngleWidth, pointsInFullCircle,
-            pieColor1, pieColor2, 180);
+            true, pieColor1, pieColor2, 180);
     }
 
     var sliceSizeDone = 0;
     for (var index=0; index<sliceSizes.length; index++)
     {
         var sliceSize = sliceSizes[index];
-        var color1 = sliceColors[index % sliceColors.length].color1;
-        var color2 = sliceColors[index % sliceColors.length].color2;
         if (sliceSize > minSliceSize)
         {
+            var color1 = sliceColors[index % sliceColors.length].color1;
+            var color2 = sliceColors[index % sliceColors.length].color2;
+
             // Offset must be scaled in x/y according to sin/cos of the angle...
             var sliceStartAngle = 360 - totalSliceSize + rotation + sliceSizeDone;
             var sliceCenter = sliceStartAngle + (sliceSize / 2);
@@ -136,10 +136,32 @@ function makePieWithSlices(element, centerX, centerY, floatOffset, radius, slice
                 Math.round(centerX + offsetX),
                 Math.round(centerY - offsetY),
                 radius, sliceStartAngle, sliceSize, pointsInFullCircle,
-                color1, color2, 180 - sliceCenter);
-        }
+                true, color1, color2, 180 - sliceCenter);
 
-        sliceSizeDone += sliceSize;
+            sliceSizeDone += sliceSize;
+        }
+    }
+
+    var emptySliceSize = totalSliceSize - sliceSizeDone;
+    if (emptySliceSize > 0)
+    {
+        // Take up slack
+        var sliceSize = emptySliceSize;
+        var color1 = 0;// sliceColors[index % sliceColors.length].color1;
+        var color2 = 0;// sliceColors[index % sliceColors.length].color2;
+        // Offset must be scaled in x/y according to sin/cos of the angle...
+        var sliceStartAngle = 360 - totalSliceSize + rotation + sliceSizeDone;
+        var sliceCenter = sliceStartAngle + (sliceSize / 2);
+        var xScale = cosDegrees(sliceCenter);
+        var yScale = sinDegrees(sliceCenter);
+        var offsetX = xScale * floatOffset;
+        var offsetY = yScale * floatOffset;
+
+        makeSlice(element,
+            Math.round(centerX + offsetX),
+            Math.round(centerY - offsetY),
+            radius, sliceStartAngle, sliceSize, pointsInFullCircle,
+            false, color1, color2, 180 - sliceCenter);
     }
 }
 
@@ -168,7 +190,7 @@ function makePieWithSlices(element, centerX, centerY, floatOffset, radius, slice
  * @param color2        the second color for the gradient
  * @param fillAngle     the angle through which the gradient is rotated
  */
-function makeSlice(element, centerX, centerY, radius, startAngle, angleWidth, pointsInFullCircle, color1, color2, fillAngle)
+function makeSlice(element, centerX, centerY, radius, startAngle, angleWidth, pointsInFullCircle, fill, color1, color2, fillAngle)
 {
     var pixelCenterX = centerX;
     var pixelCenterY = centerY;
@@ -231,7 +253,14 @@ function makeSlice(element, centerX, centerY, radius, startAngle, angleWidth, po
     shapeHtml += "coordsize='" + pieGlobals.pieCoordinateSize + "," + pieGlobals.pieCoordinateSize + "' coordorigin='" + centerX + "," + centerY + "'";
     shapeHtml += ">";
     shapeHtml += "\n    <v:path v='" + path + "' />";
-    shapeHtml += "\n    <v:fill type='gradient' color='" + color1 + "' color2='" + color2 + "' angle='" + fillAngle + "'/>";
+    if (fill == true)
+    {
+        shapeHtml += "\n    <v:fill type='gradient' color='" + color1 + "' color2='" + color2 + "' angle='" + fillAngle + "'/>";
+    }
+    else
+    {
+        shapeHtml += "\n    <v:fill type='solid' opacity='.4'/>";
+    }
     shapeHtml += "\n</v:shape>";
 
     if (pieGlobals.pieDebug) alert("shapehtml=" + shapeHtml + "\nDiv at: " + divX + ", " + divY);
