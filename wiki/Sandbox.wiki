@@ -1,6 +1,6 @@
 #summary The Sandbox wherein we play.
 
-  * [http://www.andrewlynchhayden.com/folderslice/folderslice.gadget Download latest version] (0.9.1, 18 June 2007)
-  Download hosted at [http://www.andrewlynchhayden.com andrewlynchhayden.com]; [http://code.google.com/p/folderslice/downloads/detail?name=folderslice-0.9.1.gadget&can=2&q= SHA1 checksum]
+  * [http://www.andrewlynchhayden.com/folderslice/folderslice.gadget Download latest version] (0.9.3, 18 November 2007)
+  Download hosted at [http://www.andrewlynchhayden.com andrewlynchhayden.com]; [http://code.google.com/p/folderslice/downloads/detail?name=folderslice-0.9.3.gadget&can=2&q= SHA1 checksum]
 
 a [mailto:nobody@nothing.not mailto] link
