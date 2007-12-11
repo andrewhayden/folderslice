@@ -33,7 +33,7 @@
         </delete>
     </target>
 
-    <target name="package" description="build installable package">
+    <target name="package" depends="-prepare" description="build installable package">
         <mkdir dir="releases"/>
         <delete failonerror="false" file="releases/folderslice-${version}.gadget" />
         <zip basedir="${tempdir}/folderslice.gadget" destfile="releases/folderslice-${version}.gadget" />
