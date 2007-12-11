@@ -13,7 +13,7 @@ var sizingInfo = new Object;
 var minPercentWorthDrawing = .01; // in range [0,1]
 var minDegreesWorthDrawing = minPercentWorthDrawing * 360;
 var fileSystemActiveX = new ActiveXObject("Scripting.FileSystemObject");
-var DEBUG = true;
+var DEBUG = false;
 var DEBUGFINE = false;
 
 function startup()
@@ -68,7 +68,7 @@ function startupInternal()
     gadgetState.timerId = 0;
     gadgetState.invocationCounter = 0;
     gadgetState.lastDetailsInvocationCounter = -1;
-    gadgetState.maxIntervalTime = 100; // most amount of time to spend in one interval
+    gadgetState.maxIntervalTime = 33; // most amount of time to spend in one interval
     gadgetState.lastIntervalStartTimeMillis = -1;
     gadgetState.lastWorkTimeMillis = -1;
     gadgetState.restIntervalMillis = 1;
@@ -597,9 +597,6 @@ function dropShipment()
 {
     try
     {
-        // TODO: Can't handle user directories
-        // User directories appear to pass "null" to the dataTransfer object
-        // itself.  Sigh.
         var droppedItem = System.Shell.itemFromFileDrop(event.dataTransfer, 0);
         kickOff(droppedItem);
     }
@@ -658,14 +655,14 @@ function kickOff(droppedItem)
     var target;
     if (droppedItem.isLink)
     {
-        target = fileSystemActiveX.getFolder(droppedItem.link);
+        target = System.Shell.itemFromPath(droppedItem.link);
     }
     else
     {
-        target = fileSystemActiveX.getFolder(droppedItem.path);
+        target = System.Shell.itemFromPath(droppedItem.path);
     }
 
-    if (!target)
+    if (!target.isFolder)
     {
         showTitleScreen();
         return;
@@ -689,11 +686,11 @@ function kickOff(droppedItem)
 
     gadgetState.invocationCounter++;
     gadgetState.target = target;
-    gadgetState.visited[target.Path] = new Object;
-    gadgetState.visited[target.Path].size = 0;
-    gadgetState.visited[target.Path].parent = null;
-    gadgetState.visited[target.Path].numFiles = 0;
-    gadgetState.visited[target.Path].numImmediateChildren = 0;
+    gadgetState.visited[target.path] = new Object;
+    gadgetState.visited[target.path].size = 0;
+    gadgetState.visited[target.path].parent = null;
+    gadgetState.visited[target.path].numFiles = 0;
+    gadgetState.visited[target.path].numImmediateChildren = 0;
 
     var tallyState = new Object;
     tallyState.bootstrap = true;
@@ -703,7 +700,7 @@ function kickOff(droppedItem)
     
     if (DEBUG)
     {
-        debug("kicking off, target=" + target.Path);
+        debug("kicking off, target=" + target.path);
         gadgetState.timerId = setTimeout('runloopDebug(' + gadgetState.invocationCounter + ')', 1);
     }
     else
@@ -883,13 +880,12 @@ function updateTargetResultsInternal(isFlyout, pieDiv, flyoutElement)
     var targetSizeBytes = gadgetState.tallySizeBytes;
 
     var driveLetter = gadgetState.target.path.charAt(0).toUpperCase();
-    var drive = fileSystemActiveX.getDrive(driveLetter);
+    var drive = System.Shell.drive(driveLetter);
+    var totalSizeMB = drive.totalSize;
+    var freeSpaceMB = drive.freeSpace;
+    var usedSpaceMB = totalSizeMB - freeSpaceMB;
 
-    var totalSize = drive.totalSize;
-    var freeSpace = drive.freeSpace;
-    var usedSpace = totalSize - freeSpace;
-
-    var percentUsedSpaceUsedByFolder = targetSizeBytes / (usedSpace);
+    var percentUsedSpaceUsedByFolder = targetSizeBytes / (usedSpaceMB * 1024 * 1024);
 
     if (!isFlyout)
     {
@@ -1030,14 +1026,13 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
     var pieY = centerY;
 
     var driveLetter = gadgetState.target.path.charAt(0).toUpperCase();
-    //var drive = System.Shell.drive(driveLetter);
-    var drive = fileSystemActiveX.getDrive(driveLetter);
-    var totalSize = drive.totalSize;
-    var freeSpace = drive.freeSpace;
-    var usedSpace = (totalSize - freeSpace);
+    var drive = System.Shell.drive(driveLetter);
+    var totalSizeMB = drive.totalSize;
+    var freeSpaceMB = drive.freeSpace;
+    var usedSpaceMB = totalSizeMB - freeSpaceMB;
     var targetSizeBytes = gadgetState.visited[gadgetState.target.path].size;
     var formattedSize = formatSizeNice(targetSizeBytes);
-    var percentUsedSpaceUsedByFolder = targetSizeBytes / (usedSpace);
+    var percentUsedSpaceUsedByFolder = targetSizeBytes / (usedSpaceMB * 1024 * 1024);
     var formattedPercent = (percentUsedSpaceUsedByFolder < 0.1 ? "0" : "") + (percentUsedSpaceUsedByFolder * 100).toFixed(1);
     var bakedPath = hackPathForCall(gadgetState.target.path);
 
@@ -1488,18 +1483,16 @@ function tallyFolderSize(invocationCounter)
     if (tallyState.bootstrap)
     {
         // First time for this folder.
-        tallyState.folders = tallyState.target.SubFolders;
-        tallyState.files = tallyState.target.Files;
-        tallyState.foldersEnumerator = new Enumerator(tallyState.folders);
-        tallyState.filesEnumerator = new Enumerator(tallyState.files);
+        tallyState.contents = tallyState.target.SHFolder.Items;
+        tallyState.numEntries = tallyState.contents.count;
+        tallyState.index = 0;
         tallyState.bootstrap = false;
     }
 
     var entry;
     var sizeBytes = 0;
 
-    // Process files
-    for (; !tallyState.filesEnumerator.atEnd(); tallyState.filesEnumerator.moveNext())
+    for (; tallyState.index<tallyState.numEntries; tallyState.index++)
     {
         gadgetState.lastWorkTimeMillis = new Date().getTime();
         if (possiblySleepNow(tallyState))
@@ -1508,135 +1501,89 @@ function tallyFolderSize(invocationCounter)
             return false;
         }
 
-        // Iterate over the list files objects in the directory
-        entry = tallyState.filesEnumerator.item();
+        // Iterate over the list of System.Shell.Item objects in the directory
+        entry = tallyState.contents.item(tallyState.index);
         var ok = true;
 
-        if (!entry || !entry.Path)
+        if (!entry || !entry.path)
         {
-            // Weird.  Don't know how to process these.  Shouldn't happen.
-            if (DEBUG) debug("entry is corrupt");
+            // Weird.  Don't know how to process these.
+            ok = false;
+        }
+        else if (gadgetState.visited[entry.path])
+        {
+            // Somehow ended up in a circular loop.  Stop!!!
+            if (DEBUG) debug("broke out of loop; path already seen: " + entry.path);
             ok = false;
         }
         else
         {
-            //debug("checking link for file");
-            if (gadgetState.numVisited > 63050)
-            {
-                debug("processing file " + entry.Path);
-            }
-
-            var asShellItem = System.Shell.itemFromPath(entry.Path);
-            if (asShellItem && asShellItem.isLink)
-            {
-                debug("link: " + entry.Path);
-                //entry = fileSystemActiveX.getFile(asShellItem.link.path);
-                ok = false;
-            }
-
-            if (gadgetState.visited[entry.Path])
-            {
-                // Somehow ended up in a circular loop.  Stop!!!
-                if (DEBUG) debug("file reached via multiple paths: " + entry.Path);
-                ok = false;
-            }
-            else if (entry.Attributes & 6 != 0)
-            {
-                // Hidden (0x02) or system file (0x04)
-                // (Binary OR mask; so to check for system or hidden, mask against
-                // (0x02 | 0x04) = (0x06)
-                if (DEBUGFINE) debugFine("hidden/system file: " + entry.Path);
-                //ok = false;
-            }
-            else
-            {
-                gadgetState.numVisited++;
-            }
+            gadgetState.numVisited++;
         }
 
         if (ok)
         {
-            // Not a directory, might be a "link" (that is, a shortcut).
-            // Either way, must be a file!  Unlike SHItem API, archives
-            // are considered to be files instead of folders.
-            sizeBytes = entry.Size;
-            gadgetState.tallySizeBytes += sizeBytes;
-            gadgetState.numFiles++;
-            gadgetState.visited[tallyState.target.Path].numImmediateChildren++;
-            addSizeRecursive(tallyState.target.Path, sizeBytes);
-        }
-    }
-
-    // Process folders
-    for (; !tallyState.foldersEnumerator.atEnd(); tallyState.foldersEnumerator.moveNext())
-    {
-        gadgetState.lastWorkTimeMillis = new Date().getTime();
-        if (possiblySleepNow(tallyState))
-        {
-            // Stop executing.  We will be called again by timer.
-            return false;
-        }
-
-        // Iterate over the folder objects in the directory
-        entry = tallyState.foldersEnumerator.item();
-        var ok = true;
-
-        if (!entry || !entry.Path)
-        {
-            // Weird.  Don't know how to process these.  Shouldn't happen.
-            ok = false;
-        }
-        else
-        {
-            if (gadgetState.numVisited > 63050)
+            // "System.Shell.Item.isFile" is currently broken (26 May 2007)
+            if (entry.isFolder)
             {
-                debug("processing folder " + entry.Path);
-            }
+                // A directory, or a file.  Note that ZIP files are considered
+                // directories.
+                // If this is an archive file, its size is it's compressed size,
+                // not the size of its contents (we do not want to open the zip
+                // files.  We really, really don't want to.
+                var path = entry.path.toString();
+                var archive = isArchive(path);
+    
+                if (!archive)
+                {
+                    // Regular folder
+                    gadgetState.visited[entry.path] = new Object;
+                    gadgetState.visited[entry.path].size = 0;
+                    gadgetState.visited[entry.path].parent = tallyState.target;
+                    gadgetState.visited[entry.path].numFiles = 0;
+                    gadgetState.visited[entry.path].path = entry.path;
+                    gadgetState.visited[entry.path].numImmediateChildren = 0;
 
-            var asShellItem = System.Shell.itemFromPath(entry.Path);
-            if (asShellItem && asShellItem.isLink)
-            {
-                debug("folder link: " + entry.Path);
-                //entry = fileSystemActiveX.getFile(asShellItem.link.path);
-                ok = false;
-            }
+                    // if (DEBUG) debug("folder:" + path);
+                    // Recurse.
+                    var newState = new Object;
+                    newState.bootstrap = true;
+                    newState.target = entry;
+                    // Push new state onto the stack...
+                    gadgetState.tallyStack.push(newState);
+                    gadgetState.numFolders++;
+                }
+                else
+                {
+                    // Only the activeX control can handle files whose size
+                    // is greter than or equal to 4GB.
+                    var safeFile = fileSystemActiveX.getFile(entry.path);
+                    var size = safeFile.size;
 
-            if (gadgetState.visited[entry.Path])
-            {
-                // Somehow ended up in a circular loop.  Stop!!!
-                if (DEBUG) debug("folder reached via multiple paths: " + entry.Path);
-                ok = false;
+                    // Archive folder
+                    gadgetState.tallySizeBytes += size;
+                    gadgetState.numFiles++;
+                    gadgetState.visited[tallyState.target.path].numImmediateChildren++;
+                    addSizeRecursive(tallyState.target.path, size);
+                    // if (DEBUG) debug("archive:" + path);
+                }
             }
             else
             {
-                gadgetState.numVisited++;
+                // Not a directory, might be a "link" (that is, a shortcut).
+                // Either way, must be a file!
+
+                // Only the activeX control can handle files whose size
+                // is greter than or equal to 4GB.
+                var safeFile = fileSystemActiveX.getFile(entry.path);
+                var size = safeFile.size;
+
+                gadgetState.tallySizeBytes += size;
+                gadgetState.numFiles++;
+                gadgetState.visited[tallyState.target.path].numImmediateChildren++;
+                addSizeRecursive(tallyState.target.path, size);
+                // if (DEBUG) debug("file:" + entry.path);
             }
-        }
-
-        if (ok)
-        {
-            // Note that ZIP files are considered directories.
-            // If this is an archive file, its size is it's compressed size,
-            // not the size of its contents (we do not want to open the zip
-            // files.  We really, really don't want to).
-            var path = entry.Path;
-
-            // Regular folder
-            gadgetState.visited[path] = new Object;
-            gadgetState.visited[path].size = 0;
-            gadgetState.visited[path].parent = tallyState.target;
-            gadgetState.visited[path].numFiles = 0;
-            gadgetState.visited[path].path = path;
-            gadgetState.visited[path].numImmediateChildren = 0;
-
-            if (DEBUGFINE) debugFine("folder:" + path);
-            // Recurse.
-            var newState = new Object;
-            newState.bootstrap = true;
-            newState.target = entry;
-            // Push new state onto the stack...
-            gadgetState.tallyStack.push(newState);
-            gadgetState.numFolders++;
         }
     }
 
