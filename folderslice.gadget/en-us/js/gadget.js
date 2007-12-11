@@ -1083,7 +1083,7 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
 
     if (element.folderslice.disclaimerSpan)
     {
-        element.folderslice.disclaimerSpan.innerText="* Does not include files and folders in the Recycle Bin."; 
+        element.folderslice.disclaimerSpan.innerText="* Does not include hidden/system files or items in the Recycle Bin."; 
     }
 
     if (element.folderslice.refreshLink)
