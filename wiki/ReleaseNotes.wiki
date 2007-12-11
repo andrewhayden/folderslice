@@ -1,5 +1,13 @@
 #summary Release Notes
 
+=== 0.9.4 ===
+(Release pending)
+  * Improved response time, particularly when the application encounters large blocks of slow-to-access files.  The new algorithm is based on time instead of fixed-size file-batching operations. (Issue #8)
+  * Implemented workaround for serious bug (caused by underlying bugs in Microsoft API) that caused files >= 2GB to have incorrect (sometimes negative) file sizes! (Issue #7)
+  * Debugging pane now always sits below everything else and is tucked out-of-the-way (if debug mode is enabled).
+  * Added note to details page that gadget does not include hidden and/or system files.  (Issue #9, still outstanding)
+  * Corrected buildfile problem where the buildfile couldn't create a release unless the gadget had already been deployed at least once. (Issue #6)
+
 === 0.9.3 ===
 _18 November 2007_
   * Second public release
