@@ -18,6 +18,15 @@ Controlling Folderslice really is simple; but as the saying goes, a picture is w
 
 
 
+= Errors =
+Of course, there may be problems that arise during the operation of FolderSlice.  For example, a known issue (Issue #12) is that the sidebar cannot handle certain types of folders when they are dragged onto it (this is a problem with the Microsoft Sidebar API, not with FolderSlice); in such cases, you will see an error panel fly out of the gadget window, like so:
+
+[http://folderslice.googlecode.com/svn/trunk/screenshots/error-display.png]
+
+If you see such a screen and think there might be a problem with FolderSlice (it is certainly possible), by all means please file it as an issue (just click on the Issue tab at the top of this page).
+
+
+
 = Miscellaneous =
   * Clicking anywhere outside of the flyout window or gadget will cause the flyout window to hide.  You can show it again by clicking on the "Details..." link as you did before.
   * If you bring up the details pane for a folder that contains _many_ child folders, it may take several seconds to display the flyout, during which the application may be unresponsive.
