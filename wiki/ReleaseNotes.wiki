@@ -1,7 +1,7 @@
 #summary Release Notes
 
 === 0.9.4 ===
-(Release pending)
+_12 December 2007_
   * Improved response time, particularly when the application encounters large blocks of slow-to-access files.  The new algorithm is based on time instead of fixed-size file-batching operations. (Issue #8)
   * Implemented workaround for serious bug (caused by underlying bugs in Microsoft API) that caused files >= 2GB to have incorrect (sometimes negative) file sizes! (Issue #7)
   * Debugging pane now always sits below everything else and is tucked out-of-the-way (if debug mode is enabled).
@@ -9,6 +9,7 @@
   * Corrected buildfile problem where the buildfile couldn't create a release unless the gadget had already been deployed at least once. (Issue #6)
   * Corrected serious problem where folders whose names ended in ".zip" (or any other common archive extension) could cause the gadget to hang in the "processing" state forever.  (Issue #10)
   * Gadget is now much more graceful in the face of errors and will attempt to display the cause and any useful information in a new flyout. (Issue #11)
+  * Thanks to Greg S. for his help in testing this release with large files and folders, and archive-name folders.
 
 === 0.9.3 ===
 _18 November 2007_
