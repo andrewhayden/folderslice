@@ -1,0 +1,26 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Folder Slice Error</title>
+    <link rel="stylesheet" type="text/css" href="css/errorFlyout.css" />
+    <script language="javascript" type="text/javascript">
+    function init()
+    {
+        var errorText = System.Gadget.document.parentWindow.getErrorText();
+        document.getElementById('errorText').innerText = errorText;
+        var errorDetails = System.Gadget.document.parentWindow.getErrorDetails();
+        document.getElementById('errorDetails').innerText = errorDetails;
+    }
+    </script>
+</head>
+<body onload='init()' style='color: rgb(225,225,225)'>
+<span style='font-size: 0px;'><a href='http://code.google.com/p/folderslice/'></a></span><img id='error' style='float: left;' src='../images/error.png'>
+&nbsp;An error was encountered!
+<br>
+Description: <span id='errorText' class='errorText'></span>
+<br>
+Details: <span id='errorDetails' class='errorText'></span>
+<br>
+Please consider <a href='http://code.google.com/p/folderslice/issues/list'>reporting this issue</a> so that it can be investigated.
+</body>
+</html>

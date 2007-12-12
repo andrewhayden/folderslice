@@ -1,10 +1,5 @@
 var gadgetPath = System.Gadget.path;
 
-// List of archive formats we will not open
-var archiveExtensions = [
-    "zip", "tar", "gz", "z", "tgz", "bz2", "rar", "jar", "7z",
-    "ear", "war", "lzh", "lzx", "ace", "cab", "iso", "arc", "arj"];
-
 // If we get beyond yottabytes (10^24) while using JavaScript, the future is bleak indeed.
 var sizeUnits = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 var gadgetState = new Object;
@@ -100,6 +95,10 @@ function startupInternal()
     gadgetState.childSliceColors[2].color1 = "#0000ff";
     gadgetState.childSliceColors[2].color2 = "#000040";
     gadgetState.showFlyoutOnFinish = false;
+    gadgetState.errorShowing = false;
+    gadgetState.errorText = "";
+    gadgetState.errorDetails = "";
+    gadgetState.lastTallyState = undefined;
 
     // Flyout state information
     flyoutState.invocationCounter = gadgetState.invocationCounter - 1;
@@ -116,6 +115,7 @@ function startupInternal()
     document.getElementById('parentGoButton').noResize = true;
     document.getElementById(gadgetState.progressIndicatorId).noResize = true;
 
+    setProgressIndicatorProgress();
     showTitleScreen();
     setVisible(gadgetState.progressIndicatorId, false);
     setVisible(gadgetState.cancelButtonId, false);
@@ -153,7 +153,81 @@ function showAnalysisFlyout()
 
 function hideAnalysisFlyout()
 {
-    System.Gadget.Flyout.show = false;
+    if (!gadgetState.errorShowing)
+    {
+        System.Gadget.Flyout.show = false;
+    }
+}
+
+function getErrorText()
+{
+    return gadgetState.errorText;
+}
+
+function getErrorDetails()
+{
+    return gadgetState.errorDetails;
+}
+
+function showErrorFlyout(errorText)
+{
+    setProgressIndicatorError();
+    document.getElementById('processingLabel').innerText="Error...";
+    document.getElementById(gadgetState.cancelButtonId).innerText="OK";
+    System.Gadget.Flyout.file =  'errorFlyout.html';
+    gadgetState.errorShowing = true;
+    gadgetState.errorText = errorText;
+    gadgetState.errorDetails = undefined;
+    debug("showing error");
+    try
+    {
+        var tallyState = gadgetState.lastTallyState;
+        if (tallyState)
+        {
+            var lastItem = undefined;
+            // Best possible thing is if we can find out the last item
+            // because that tells us what just blew up
+            if (tallyState.contents && tallyState.index)
+            {
+                lastItem = tallyState.contents.item(tallyState.index);
+                if (lastItem && lastItem.path)
+                {
+                    gadgetState.errorDetails = "Last item analyzed: " + lastItem.path;
+                }
+            }
+            else
+            {
+                // If we can't do that, maybe we can figure out what folder we
+                // were in at least...
+                var lastTarget = tallyState.target;
+                if (lastTarget && lastTarget.path)
+                {
+                    gadgetState.errorDetails = "Last folder analyzed: " + gadget.lastTallyState.target.path;
+                }
+            }
+        }
+        else
+        {
+            gadgetState.errorDetails = "No state information available.";
+        }
+    }
+    catch(errorErrorFunFun)
+    {
+        // Can't get error details...
+        gadgetState.errorDetails = "Unusual deep error condition.";
+    }
+
+    gadgetState.lastDetailsInvocationCounter = -1;
+    System.Gadget.Flyout.show = true;
+}
+
+function hideErrorFlyout()
+{
+    if (gadgetState.errorShowing)
+    {
+        gadgetState.errorShowing = false;
+        System.Gadget.Flyout.show = false;
+    }
 }
 
 function flyoutLoaded()
@@ -472,6 +546,7 @@ function cancel()
         gadgetState.invocationCounter++;
         clearTimeout(gadgetState.timerId);
         gadgetState.timerId = 0;
+        hideErrorFlyout();
         setVisible(gadgetState.progressIndicatorId, false);
         showTitleScreen();
 
@@ -513,6 +588,7 @@ function hideProcessingScreen()
 
 function showProcessingProgressText()
 {
+    document.getElementById(gadgetState.cancelButtonId).innerText="Cancel";
     setEnabled(gadgetState.cancelButtonId, true);
     setVisible(gadgetState.cancelButtonId, true);
     document.getElementById('processingLabel').innerText="Processing...";
@@ -617,6 +693,7 @@ function dropShipment()
         }
 
         if (DEBUG) debug(errorText);
+        showErrorFlyout(errorText);
     }
 }
 
@@ -643,6 +720,7 @@ function runloopDebug(invocationCounter)
         }
 
         if (DEBUG) debug(errorText);
+        showErrorFlyout(errorText);
     }
 }
 
@@ -652,6 +730,7 @@ function runloopDebug(invocationCounter)
 function kickOff(droppedItem)
 {
     hideAnalysisFlyout();
+    setProgressIndicatorProgress();
     var target;
     if (droppedItem.isLink)
     {
@@ -696,17 +775,14 @@ function kickOff(droppedItem)
     tallyState.bootstrap = true;
     tallyState.target = target;
     gadgetState.tallyStack.push(tallyState);
+    gadgetState.lastTallyState = tallyState;
     gadgetState.lastIntervalStartTimeMillis = new Date().getTime();
     
     if (DEBUG)
     {
         debug("kicking off, target=" + target.path);
-        gadgetState.timerId = setTimeout('runloopDebug(' + gadgetState.invocationCounter + ')', 1);
     }
-    else
-    {
-        gadgetState.timerId = setTimeout('tallyHelper(' + gadgetState.invocationCounter + ')', 1);
-    }
+    gadgetState.timerId = setTimeout('runloopDebug(' + gadgetState.invocationCounter + ')', 1);
 }
 
 function updateStats(idSuffix, maxFolderChars, folderName, percent, sizeBytes, numFiles)
@@ -1351,6 +1427,7 @@ function finishUp()
 {
     try
     {
+        gadgetState.lastTallyState = undefined;
         var parent = getParent(gadgetState.target.path);
         if (parent !== undefined)
         {
@@ -1441,12 +1518,8 @@ function tallyHelper(invocationCounter)
             if (DEBUG)
             {
                 debug("lots of empties; resting for " + gadgetState.restIntervalMillis + "ms");
-                gadgetState.timerId = setTimeout('runloopDebug(' + invocationCounter + ')', gadgetState.restIntervalMillis);
             }
-            else
-            {
-                gadgetState.timerId = setTimeout('tallyHelper(' + invocationCounter + ')', gadgetState.restIntervalMillis);
-            }
+            gadgetState.timerId = setTimeout('runloopDebug(' + invocationCounter + ')', gadgetState.restIntervalMillis);
         }
     }
 }
@@ -1479,6 +1552,7 @@ function tallyFolderSize(invocationCounter)
 
     // Otherwise, there is work to be done.
     var tallyState = gadgetState.tallyStack.pop();
+    gadgetState.lastTallyState = tallyState;
 
     if (tallyState.bootstrap)
     {
@@ -1532,9 +1606,21 @@ function tallyFolderSize(invocationCounter)
                 // not the size of its contents (we do not want to open the zip
                 // files.  We really, really don't want to.
                 var path = entry.path.toString();
-                var archive = isArchive(path);
-    
-                if (!archive)
+
+                // To get around this we will try to get the object as a file.
+                // If that fails, it must be a folder.
+                var fileActiveX = undefined;
+                try
+                {
+                    // If this succeeds, we've really got a file on our hands.                
+                    fileActiveX = fileSystemActiveX.getFile(entry.path);
+                }
+                catch(error)
+                {
+                    // Is not a file.  It really is a folder.
+                }
+
+                if (!fileActiveX)
                 {
                     // Regular folder
                     gadgetState.visited[entry.path] = new Object;
@@ -1557,8 +1643,7 @@ function tallyFolderSize(invocationCounter)
                 {
                     // Only the activeX control can handle files whose size
                     // is greter than or equal to 4GB.
-                    var safeFile = fileSystemActiveX.getFile(entry.path);
-                    var size = safeFile.size;
+                    var size = fileActiveX.size;
 
                     // Archive folder
                     gadgetState.tallySizeBytes += size;
@@ -1619,12 +1704,8 @@ function possiblySleepNow(tallyState)
         if (DEBUG)
         {
             debugFine("taking too long, lag=" + lag + "; resting for " + waitTime + "ms; lastStart=" + gadgetState.lastIntervalStartTimeMillis + ", lastWork=" + gadgetState.lastWorkTimeMillis);
-            gadgetState.timerId = setTimeout('runloopDebug(' + gadgetState.invocationCounter + ')', waitTime);
         }
-        else
-        {
-            gadgetState.timerId = setTimeout('tallyHelper(' + gadgetState.invocationCounter + ')', waitTime);
-        }
+        gadgetState.timerId = setTimeout('runloopDebug(' + gadgetState.invocationCounter + ')', waitTime);
 
         // And finally, return true to tell caller to return.
         return true;
@@ -1654,26 +1735,6 @@ function addSizeRecursive(parentPath, size)
             return;
         }
     }
-}
-
-/**
- * Returns true if the file is an archive; otherwise, returns false.
- */
-function isArchive(path)
-{
-    var lastDot = path.lastIndexOf(".");
-    if (lastDot >= 0 && lastDot < path.length - 1)
-    {
-        var extension = path.substring(lastDot + 1).toLowerCase();
-        for (var extensionIndex = 0; extensionIndex < archiveExtensions.length; extensionIndex++)
-        {
-            if (archiveExtensions[extensionIndex] == extension)
-            {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 function debug(text)
@@ -1770,4 +1831,14 @@ function darkenParentGoButton()
 function refresh()
 {
     kickOff(gadgetState.target);
+}
+
+function setProgressIndicatorError()
+{
+    document.getElementById(gadgetState.progressIndicatorId).src="images/error.png";
+}
+
+function setProgressIndicatorProgress()
+{
+    document.getElementById(gadgetState.progressIndicatorId).src="images/progress.gif";
 }
