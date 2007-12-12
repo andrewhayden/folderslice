@@ -171,6 +171,8 @@ function getErrorDetails()
 
 function showErrorFlyout(errorText)
 {
+    hideAnalysisFlyout();
+
     setProgressIndicatorError();
     document.getElementById('processingLabel').innerText="Error...";
     document.getElementById(gadgetState.cancelButtonId).innerText="OK";
@@ -1595,63 +1597,39 @@ function tallyFolderSize(invocationCounter)
             gadgetState.numVisited++;
         }
 
+        // To get around this we will try to get the object as a file.
+        // If that fails, it must be a folder.
+        var fileActiveX = undefined;
+        try
+        {
+            // If this succeeds, we've really got a file on our hands.                
+            fileActiveX = fileSystemActiveX.getFile(entry.path);
+        }
+        catch(error)
+        {
+            // Is not a file.  It really is a folder.
+        }
+
         if (ok)
         {
-            // "System.Shell.Item.isFile" is currently broken (26 May 2007)
-            if (entry.isFolder)
+            if (!fileActiveX)
             {
-                // A directory, or a file.  Note that ZIP files are considered
-                // directories.
-                // If this is an archive file, its size is it's compressed size,
-                // not the size of its contents (we do not want to open the zip
-                // files.  We really, really don't want to.
-                var path = entry.path.toString();
+                // Regular folder
+                gadgetState.visited[entry.path] = new Object;
+                gadgetState.visited[entry.path].size = 0;
+                gadgetState.visited[entry.path].parent = tallyState.target;
+                gadgetState.visited[entry.path].numFiles = 0;
+                gadgetState.visited[entry.path].path = entry.path;
+                gadgetState.visited[entry.path].numImmediateChildren = 0;
 
-                // To get around this we will try to get the object as a file.
-                // If that fails, it must be a folder.
-                var fileActiveX = undefined;
-                try
-                {
-                    // If this succeeds, we've really got a file on our hands.                
-                    fileActiveX = fileSystemActiveX.getFile(entry.path);
-                }
-                catch(error)
-                {
-                    // Is not a file.  It really is a folder.
-                }
-
-                if (!fileActiveX)
-                {
-                    // Regular folder
-                    gadgetState.visited[entry.path] = new Object;
-                    gadgetState.visited[entry.path].size = 0;
-                    gadgetState.visited[entry.path].parent = tallyState.target;
-                    gadgetState.visited[entry.path].numFiles = 0;
-                    gadgetState.visited[entry.path].path = entry.path;
-                    gadgetState.visited[entry.path].numImmediateChildren = 0;
-
-                    // if (DEBUG) debug("folder:" + path);
-                    // Recurse.
-                    var newState = new Object;
-                    newState.bootstrap = true;
-                    newState.target = entry;
-                    // Push new state onto the stack...
-                    gadgetState.tallyStack.push(newState);
-                    gadgetState.numFolders++;
-                }
-                else
-                {
-                    // Only the activeX control can handle files whose size
-                    // is greter than or equal to 4GB.
-                    var size = fileActiveX.size;
-
-                    // Archive folder
-                    gadgetState.tallySizeBytes += size;
-                    gadgetState.numFiles++;
-                    gadgetState.visited[tallyState.target.path].numImmediateChildren++;
-                    addSizeRecursive(tallyState.target.path, size);
-                    // if (DEBUG) debug("archive:" + path);
-                }
+                // if (DEBUG) debug("folder:" + path);
+                // Recurse.
+                var newState = new Object;
+                newState.bootstrap = true;
+                newState.target = entry;
+                // Push new state onto the stack...
+                gadgetState.tallyStack.push(newState);
+                gadgetState.numFolders++;
             }
             else
             {
@@ -1660,8 +1638,7 @@ function tallyFolderSize(invocationCounter)
 
                 // Only the activeX control can handle files whose size
                 // is greter than or equal to 4GB.
-                var safeFile = fileSystemActiveX.getFile(entry.path);
-                var size = safeFile.size;
+                var size = fileActiveX.size;
 
                 gadgetState.tallySizeBytes += size;
                 gadgetState.numFiles++;
