@@ -8,7 +8,7 @@ var sizingInfo = new Object;
 var minPercentWorthDrawing = .01; // in range [0,1]
 var minDegreesWorthDrawing = minPercentWorthDrawing * 360;
 var fileSystemActiveX = new ActiveXObject("Scripting.FileSystemObject");
-var DEBUG = false;
+var DEBUG = true;
 var DEBUGFINE = false;
 
 function startup()
@@ -99,6 +99,8 @@ function startupInternal()
     gadgetState.errorText = "";
     gadgetState.errorDetails = "";
     gadgetState.lastTallyState = undefined;
+    gadgetState.lastTopDetected = 0;
+    gadgetState.gadgetChangedPagesFlyoutShowing = false;
 
     // Flyout state information
     flyoutState.invocationCounter = gadgetState.invocationCounter - 1;
@@ -231,6 +233,25 @@ function hideErrorFlyout()
         System.Gadget.Flyout.show = false;
     }
 }
+
+function showGadgetChangedPagesFlyout()
+{
+    hideAnalysisFlyout();
+    System.Gadget.Flyout.file =  'gadgetChangedPagesFlyout.html';
+    gadgetState.gadgetChangedPagesFlyoutShowing = true;
+    debug("showing gadget-changed-pages notification");
+    System.Gadget.Flyout.show = true;
+}
+
+function hideGadgetChangedPagesFlyout()
+{
+    if (gadgetState.gadgetChangedPagesFlyoutShowing)
+    {
+        gadgetState.gadgetChangedPagesFlyoutShowing = false;
+        System.Gadget.Flyout.show = false;
+    }
+}
+
 
 function flyoutLoaded()
 {
@@ -571,7 +592,32 @@ function setSize(size)
     {
         document.body.style.pixelHeight=size.height + 200;
     }
-    document.body.style.backgroundImage="url(\"" + size.background + "\")"; 
+    document.body.style.backgroundImage="url(\"" + size.background + "\")";
+
+    if (gadgetState.gadgetChangedPagesDetection === undefined)
+    {
+        // First call to this method (app is starting up).
+        // Turn detection on for all future calls, do nothing now.
+        gadgetState.gadgetChangedPagesDetection = true;
+    }
+    else if (gadgetState.gadgetChangedPagesDetection === true)
+    {
+        gadgetState.lastTopDetected = document.parentWindow.screenTop;
+        setTimeout('detectGadgetChangedPages()', 1);
+    }
+}
+
+function detectGadgetChangedPages()
+{
+    if (gadgetState.gadgetChangedPagesDetection)
+    {
+        if (gadgetState.lastTopDetected != document.parentWindow.screenTop)
+        {
+            // Gadget's top has moved during resize.  This means the gadget
+            // has been relocated to somewhere else in the sidebar!
+            showGadgetChangedPagesFlyout();
+        }
+    }
 }
 
 function showProcessingScreen()
@@ -862,7 +908,7 @@ function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocatio
         element = flyoutElement.folderslice.navigationLink;
         if (element)
         {
-            element.href="javascript:flyoutNavigate('" + bakedPath + "');";
+            element.href="javascript:flyoutNavigate(\"" + bakedPath + "\");";
             element.innerText = folderName;
         }
 
@@ -870,13 +916,13 @@ function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocatio
         if (element)
         {
             // Set on-click
-            element.onclick=new Function("flyoutExplore('" + bakedPath + "');");
+            element.onclick=new Function("flyoutExplore(\"" + bakedPath + "\");");
         }
 
         element = flyoutElement.folderslice.exploreLink;
         if (element)
         {
-            element.href="javascript:flyoutExplore('" + bakedPath + "');";
+            element.href="javascript:flyoutExplore(\"" + bakedPath + "\");";
         }
 
         element = flyoutElement.folderslice.exploreLinkText;
@@ -1004,6 +1050,32 @@ function updateChildrenResults(pieDivId)
  * Invoked on the timer.
  * Accumulates data in gadgetState.
  */
+function flyoutLoopDebug()
+{
+    try
+    {
+        flyoutLoop();
+    }
+    catch(error)
+    {
+        var errorText = error.name + ": " + error;
+        if (error.message)
+        {
+            errorText += ": " + error.message;
+        }
+        else if (error.cause)
+        {
+            errorText += ": " + error.cause;
+        }
+        else if (error.description)
+        {
+            errorText += ": " + error.description;
+        }
+
+        if (DEBUG) debug(errorText);
+    }
+}
+
 function flyoutLoop()
 {
     // Check if we are executing the user's latest request.
@@ -1059,12 +1131,13 @@ function flyoutLoop()
         flyoutState.sortedChildren[index].size,
         flyoutState.sortedChildren[index].numFiles,
         color1, color2);
+        
     flyoutState.element.appendChild(childElement);
 
     // Increment index and reschedule.
     flyoutState.index++;
     flyoutState.timerId =
-        setTimeout('flyoutLoop()', flyoutState.restIntervalMillis);
+        setTimeout('flyoutLoopDebug()', flyoutState.restIntervalMillis);
 }
 
 function updateFlyoutChildrenResults(element, sliceSizesPercents, sliceColors)
@@ -1080,7 +1153,7 @@ function updateFlyoutChildrenResults(element, sliceSizesPercents, sliceColors)
     flyoutState.index = 0;
     flyoutState.doneWithInteresting = false;
     flyoutState.timerId =
-        setTimeout('flyoutLoop()', 500);
+        setTimeout('flyoutLoopDebug()', 500);
 }
 
 function updateFlyoutSummaryResults(element, sliceSizes, childColors)
@@ -1183,12 +1256,12 @@ function updateFlyoutSummaryResults(element, sliceSizes, childColors)
     if (element.folderslice.exploreAction)
     {
         // Set on-click
-        element.folderslice.exploreAction.onclick=new Function("flyoutExplore('" + bakedPath + "');");
+        element.folderslice.exploreAction.onclick=new Function("flyoutExplore(\"" + bakedPath + "\");");
     }
 
     if (element.folderslice.exploreLink)
     {
-        element.folderslice.exploreLink.href="javascript:flyoutExplore('" + bakedPath + "');";
+        element.folderslice.exploreLink.href="javascript:flyoutExplore(\"" + bakedPath + "\");";
         element.folderslice.exploreLink.innerText="Explore this folder...";
     }
 
@@ -1818,4 +1891,13 @@ function setProgressIndicatorError()
 function setProgressIndicatorProgress()
 {
     document.getElementById(gadgetState.progressIndicatorId).src="images/progress.gif";
+}
+
+function dismissGadgetChangedPagesFlyout(dontShowAgain)
+{
+    if (dontShowAgain && dontShowAgain === true)
+    {
+        gadgetState.gadgetChangedPagesDetection = false;
+        hideGadgetChangedPagesFlyout();
+    }
 }
