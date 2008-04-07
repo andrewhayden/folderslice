@@ -34,8 +34,5 @@ Folderslice is a sidebar gadget.  The sidebar is only found in Windows Vista, so
     # Select a folder to which the gadget should be downloaded
     # When the download completes, open the folder and double-click on the file.
     # You will be notified that the publisher of the gadget could not be verified.  Click "Install" (if you are concerned about this, the download link from Google provides a hash you can check against the file you have downloaded).
-
-
-
-
-
+  * One or more of my Gadgets has disappeared!
+    The Sidebar keeps things organized such that a Gadget will never be "cut off", displaying only part of its content.  FolderSlice starts in a very compact mode, and only expands when there are results to display.  When the gadget is resized the Sidebar may move it in order to conserve space or to keep it all on one screen.  This may cause the Gadget to move to a different "panel" in your sidebar.  Use the navigation buttons at the top of the Sidebar to move back and forth between the different panels that are available.  As of version 0.9.5, FolderSlice will display a notice when this occurs.
