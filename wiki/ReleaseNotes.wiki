@@ -3,6 +3,7 @@
 _06 April 2008_
   * Gadget now notifies the user when it is moved to another pane because of resizing itself. (Issue #14)
   * Now properly handles folders with single quote characters in their paths. (Issue #15)
+  * New icon, taken from actual use (original icon was created before the gadget functioned).  Behold the awesome icon!
 
 === 0.9.4 ===
 _12 December 2007_
