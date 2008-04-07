@@ -8,7 +8,7 @@ var sizingInfo = new Object;
 var minPercentWorthDrawing = .01; // in range [0,1]
 var minDegreesWorthDrawing = minPercentWorthDrawing * 360;
 var fileSystemActiveX = new ActiveXObject("Scripting.FileSystemObject");
-var DEBUG = true;
+var DEBUG = false;
 var DEBUGFINE = false;
 
 function startup()
