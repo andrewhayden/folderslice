@@ -1,0 +1,37 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Folder Slice</title>
+    <link rel="stylesheet" type="text/css" href="css/analysisFlyout.css" />
+    <script language="javascript" type="text/javascript">
+    function init()
+    {
+        System.Gadget.document.parentWindow.flyoutLoaded();
+    }
+
+    function flyoutNavigate(path)
+    {
+        System.Gadget.document.parentWindow.flyoutNavigate(path);
+    }
+
+    function flyoutExplore(path)
+    {
+        System.Shell.execute('"' + path + '"');
+    }
+
+    function flyoutRefresh()
+    {
+        System.Gadget.document.parentWindow.gadgetState.showFlyoutOnFinish = true;
+        System.Gadget.document.parentWindow.refresh();
+    }
+
+    function flyoutUpOneLevel()
+    {
+        System.Gadget.document.parentWindow.gadgetState.showFlyoutOnFinish = true;
+        System.Gadget.document.parentWindow.parentNavigate();
+    }
+    </script>
+</head>
+<html>
+<body onload='init()'><img id='progress' src='images/progress.gif' style='position: absolute; right: 5px; top: 5px;'><div id='content' style='width: 100%; height: 100%;'></div></body>
+</html>

@@ -1,0 +1,33 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Gadget Moved To Another Pane</title>
+    <link rel="stylesheet" type="text/css" href="css/gadgetChangedPosition.css" />
+    <script language="javascript" type="text/javascript">
+    function dismiss()
+    {
+        var dontShowAgain = document.getElementById('dontShowAgain').checked;
+        System.Gadget.document.parentWindow.dismissGadgetChangedPagesFlyout(dontShowAgain);
+    }
+    </script>
+</head>
+<body onload='init()' style='color: rgb(225,225,225)'>
+<span style='font-size: 0px;'><a href='http://code.google.com/p/folderslice/'></a></span><img id='example' class='example' src='../images/sidebarNavigation.png'>
+<span id='titleText' class='titleText'>Where did my Gadget(s) go?!</span>
+<br>
+<span id='messageText' class='messageText'>
+FolderSlice has resized itself.  Because it was at the edge of your Sidebar,
+Windows Vista has moved it (and perhaps some of your other gadgets)
+to a different panel in the Sidebar.
+<br><br>
+At the top of your Sidebar you should see a "+" button as
+well as arrows pointing left and right.  You can use the left and right
+arrows to visit the other panels in the Sidebar and locate FolderSlice.
+<br>
+<center>
+    <button id='dismiss' class='dismiss' onclick='dismiss()'>OK</button>
+    <input id='dontShowAgain' type='checkbox' checked>Don't show again (till Sidebar restarts)</input>
+</center>
+</span>
+</body>
+</html>
