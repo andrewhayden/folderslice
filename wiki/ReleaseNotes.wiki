@@ -1,7 +1,7 @@
 #summary Release Notes
 === 0.9.6 ===
 _09 April 2008_
-  * Fixed serious bug in 0.9.5 that could cause the gadget to crash whenever analysis was started.
+  * Fixed serious bug in 0.9.5 that could cause the gadget to crash whenever analysis was started. (Issue #16)
   * FolderSlice now has options!
   * Compact Mode is now optional.
   * The user will now be notified whenever FolderSlice changes modes, in order to head off confusion about gadgets moving around as a result of the resizing.  This notification can be disabled via the usual "Don't show me this again" checkbox or in the options page.
