@@ -1,0 +1,31 @@
+/* This stylesheet follows the best practices outlined at:
+   http://msdn2.microsoft.com/en-us/library/aa974179.aspx
+   (Windows Vista User Experience Guide)
+*/
+
+*
+{
+    font-family: Segue;
+    font-size: 12px;
+    margin: 0px;
+    padding: 0px;
+    color: rgb(0,0,0);
+}
+
+body
+{
+    width: 278px;
+    height: 300px;
+}
+
+td.description
+{
+    padding-bottom: 1em;
+    font-size: 80%;
+    vertical-align: top;
+}
+
+table.mainTable
+{
+    width: 100%;
+}

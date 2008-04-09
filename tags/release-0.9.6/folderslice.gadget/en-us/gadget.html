@@ -1,0 +1,174 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Folder Slice</title>
+    <style>
+        *
+        {
+            font-family: sans-serif;
+            font-size: 12px;
+            margin: 0px;
+            padding: 0px;
+        }
+        
+        A:link, A:visited
+        {
+            color: rgb(255,255,255);
+        }
+        
+        A:hover
+        {
+            color: rgb(0,255,0);
+        }
+        
+        span.value
+        {
+            font-size: 9px;
+        }
+        
+        v\:*
+        {
+            behavior: url(#default#VML);
+        }
+
+        body
+        {
+            margin: 0;
+            padding: 0px;
+            width: 130px;
+            height: 57px;
+            background: url("images/background-small.png") no-repeat;
+            color: rgb(255,255,255);
+            overflow: hidden;
+        }
+
+        td.bg
+        {
+            margin: 0px;
+            padding:0px;
+            background-repeat: no-repeat;
+        }
+
+        img.bg
+        {
+            height: 100%;
+            width: 100%;
+            padding: 0px;
+            margin: 0px;
+        }
+
+        img
+        {
+            border: none;
+        }
+
+        span.label, span.value
+        {
+            overflow: clip;
+            white-space: nowrap;
+        }
+    </style>
+    <script src="js/colorinterpolation.js" language="javascript" type="text/javascript"></script>
+    <script src="js/pie.js" language="javascript" type="text/javascript"></script>
+    <script src="js/gadget.js" language="javascript" type="text/javascript"></script>
+</head>
+<body
+    onload="startup()"
+    ondragenter="javascript:event.returnValue=false"
+    ondragover="javascript:event.returnValue=false"
+    ondrop="dropShipment();">
+    <div id='bodyshape' style='width: 100%; height: 100%;'>
+    </div>
+    <div id='titleScreen' style='width: 130px; height: 57px; position: absolute; left: 0px; top: 0px; visibility: visible;'>
+        <table style='width: 100%; height: 100%' cellspacing='0' cellpadding='0'>
+            <tr>
+                <td style='width: 100%; height: 100%; margin: 0px; padding: 0px; text-align: center; vertical-align: middle;'>
+                    <!-- Blank anchor to work around annoying focus issue -->
+                    <span style='font-size: 0px;'><a href='http://code.google.com/p/folderslice/'> </a></span>
+                    <a href='http://code.google.com/p/folderslice/'><img src='icon.png' style='width: 16px; height: 16px; position: relative; top: 5px;'></a>
+                    <a href='http://code.google.com/p/folderslice/'><span style='font-size: 12px; font-variant: small-caps;'>Folder Slice</span></a>
+                    <br>
+                    <br>
+                    <span style='font-size: 12px; font-style: italic'>Drag folders here...</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div id='processingScreen' style='width: 130px; height: 57px; position: absolute; left: 0px; top: 0px; visibility: hidden;'>
+        <table style='width: 100%; height: 100%;' cellspacing='0' cellpadding='0'>
+            <tr>
+                <td style='width: 100%; height: 100%; margin: 0px; padding: 0px; text-align: center; vertical-align: middle'>
+                    <img id='progressIndicator' src='images/progress.gif' style='visibility: hidden; width: 16px; height: 16px; position: relative; top: 5px;'>
+                    <span id='processingLabel' style='font-size: 12px'></span>
+                    <br>
+                    <br>
+                    <button id='cancelButton' onclick='cancel()' style='visibility: hidden; font-size: 12px;'>Cancel</button>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div id='resultsScreen' style='width: 130px; height: 245px; position: absolute; left: 0px; top: 0px; visibility: hidden;'>
+        <div id='targetDiv' style='position: absolute; left: 0px; top: 0px; width: 130px; height: 45px;'>
+            <div id='targetPieDiv' style='position: absolute; left: 0px; top: 0px; width: 45px; height: 45px;'></div>
+            <div id='targetTextDiv' style='position: absolute; left: 45px; top: 0px; padding-top: 2px; width: 85px; height: 45px;'>
+                <span class='label' style='font-weight: bold' id='folderName_target'></span>
+                <br>
+                <span class='value' id='statsLine1_target'></span>
+                <br>
+                <span class='value' id='statsLine2_target'></span>
+            </div>
+            <div id='refreshButton' onclick='refresh()' style='position: absolute; right: 2px; bottom: 2px; width: 16px; height: 16px; border: none; margin: 0px; padding: 0px; background-color: transparent; background-image: url("images/refresh-dark.png"); background-repeat: no-repeat; z-index: 1000;' onmouseover='highlightRefreshButton()' onmouseout='darkenRefreshButton()'></div>
+            <div id='parentGoButton' onclick='parentNavigate()' style='visibility: hidden; position: absolute; right: 23px; bottom: 2px; width: 16px; height: 16px; border: none; margin: 0px; padding: 0px; background-color: transparent; background-image: url("images/up-dark.png"); background-repeat: no-repeat; z-index: 1000;' onmouseover='highlightParentGoButton()' onmouseout='darkenParentGoButton()'></div>
+        </div>
+        <div id='childrenDiv' style='position: absolute; left: 0px; top: 45px; width: 130px; height: 200px;'>
+            <div id='childrenPieDiv' style='width: 45px; height: 45px; position: absolute; left: 0px; top: 0px;'></div>
+            <div id='childrenSummaryDiv' style='position: absolute; left: 45px; top: 0px; padding-top: 2px; width: 85px; height: 45px;'>
+                <table style='border: none; width: 80px; height: 25px;' cellpadding='0' cellspacing='0'>
+                    <tr>
+                        <td style='font-weight: bold;'>Child Folders:</td>
+                    </tr>
+                    <tr>
+                        <td>(<span id='childrenCount'>3</span> Largest)</td>
+                    </tr>
+                </table>
+            </div>
+            <div id='childrenDiv0' style='position: absolute; left: 0px; top: 50px; width: 130px; height: 45px;'>
+                <div id='childSwatchDiv0' style='position: absolute; left: 2px; top: 14px; width: 16px; height: 16px;'></div>
+                <div id='childTextDiv0' style='position: absolute; left: 20px; top: 0px; padding-top: 2px; padding-left: 4px; width: 110px; height: 45px;'>
+                    <a href='javascript:childNavigate("0");'><span class='label' style='font-weight: bold' id='folderName_child0'></span></a>
+                    <br>
+                    <span class='value' id='statsLine1_child0'></span>
+                    <br>
+                    <span class='value' id='statsLine2_child0'></span>
+                </div>
+            </div>
+            <div id='childrenDiv1' style='position: absolute; left: 0px; top: 95px; width: 130px; height: 45px;'>
+                <div id='childSwatchDiv1' style='position: absolute; left: 2px; top: 14px; width: 16px; height: 16px;'></div>
+                <div id='childTextDiv1' style='position: absolute; left: 20px; top: 0px; padding-top: 2px; padding-left: 4px;  width: 110px; height: 45px;'>
+                    <a href='javascript:childNavigate("1");'><span class='label' style='font-weight: bold' id='folderName_child1'></span></a>
+                    <br>
+                    <span class='value' id='statsLine1_child1'></span>
+                    <br>
+                    <span class='value' id='statsLine2_child1'></span>
+                </div>
+            </div>
+            <div id='childrenDiv2' style='position: absolute; left: 0px; top: 140px; width: 130px; height: 45px;'>
+                <div id='childSwatchDiv2' style='position: absolute; left: 2px; top: 14px; width: 16px; height: 16px;'></div>
+                <div id='childTextDiv2' style='position: absolute; left: 20px; top: 0px; padding-top: 2px; padding-left: 4px;  width: 110px; height: 45px;'>
+                    <a href='javascript:childNavigate("2");'><span class='label' style='font-weight: bold' id='folderName_child2'></span></a>
+                    <br>
+                    <span class='value' id='statsLine1_child2'></span>
+                    <br>
+                    <span class='value' id='statsLine2_child2'></span>
+                </div>
+            </div>
+        </div>
+        <a href='javascript:showTitleScreen()' style='position: absolute; top: 225px; left: 5px;'>Dismiss</a>
+        <a href='javascript:showAnalysisFlyout()' style='position: absolute; top: 225px; right: 5px;'>Details...</a>
+    </div>
+    <div id='debugDiv' style='display: none; white-space: nowrap; overflow: scroll; background-color: rgb(0,0,0); color: red; z-index: 100; position: absolute; left: 0px; bottom: 0px; width: 130px; height: 200px; font-size: 14px;'>
+    </div>
+</body>
+</html>

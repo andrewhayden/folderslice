@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<gadget>
+    <name>Folder Slice</name>
+    <version>${version}</version>
+
+    <author name="Andrew Hayden">
+        <logo src="icon.png" />
+        <info url="http://code.google.com/p/folderslice/" />
+    </author>
+    <copyright>&#169; 2008</copyright>
+    <description>Find out where all that space on your hard drive has gone.</description>
+    <icons>
+        <icon width="64" height="64" src="icon.png" />
+    </icons>
+    <namespace>Hayden.Andrew</namespace>
+    <hosts>
+        <host name="sidebar">
+            <base type="HTML" apiVersion="1.0.0" src="gadget.html" />
+            <permissions>Full</permissions>
+            <platform minPlatformVersion="1.0" />
+            <website>code.google.com/p/folderslice/</website>
+        </host>
+    </hosts>
+</gadget>
