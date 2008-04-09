@@ -13,7 +13,7 @@ var DEBUGFINE = false;
 var FLYOUT_NONE = 0;
 var FLYOUT_ERROR = 1;
 var FLYOUT_ANALYSIS = 2;
-var FLYOUT_PAGECHANGED = 3;
+var FLYOUT_MODECHANGED = 3;
 var SCREEN_TITLE = 0;
 var SCREEN_PROCESSING = 1;
 var SCREEN_RESULTS = 2;
@@ -45,8 +45,6 @@ function startup()
 
 function startupInternal()
 {
-    initOptions();
-
     // Information for the various sizing options.
     sizingInfo.small = new Object;
     sizingInfo.small.width = 130;
@@ -102,6 +100,9 @@ function startupInternal()
     gadgetState.currentScreen = SCREEN_TITLE;
     gadgetState.currentFlyout = FLYOUT_NONE;
     gadgetState.firstResize = true;
+
+    // Options
+    initOptions();
 
     // Flyout onHide:
     System.Gadget.Flyout.onHide = flyoutHidden;
@@ -231,14 +232,13 @@ function hideFlyouts()
     System.Gadget.Flyout.show = false;
 }
 
-function showGadgetChangedPagesFlyout()
+function showModeChangedFlyout()
 {
     // Don't get rid of an existing flyout, ever.
     if (gadgetState.currentFlyout == FLYOUT_ERROR) return;
 
-    gadgetState.currentFlyout = FLYOUT_PAGECHANGED;
-    System.Gadget.Flyout.file =  'gadgetChangedPagesFlyout.html';
-    debug("showing gadget-changed-pages notification");
+    gadgetState.currentFlyout = FLYOUT_MODECHANGED;
+    System.Gadget.Flyout.file =  'modeChangeFlyout.html';
     System.Gadget.Flyout.show = true;
 }
 
@@ -257,52 +257,24 @@ function flyoutLoaded()
 function flyoutDoneLoading()
 {
     var element = System.Gadget.Flyout.document.getElementById('progress');
-    if (element)
-    {
-        element.style.visibility="hidden";
-    }
-    else
-    {
-        debug("Ack!  Done loading has failed!");
-    }
+    element.style.visibility="hidden";
 }
 
 function flyoutStartLoading()
 {
     var element = System.Gadget.Flyout.document.getElementById('progress');
-    if (element)
-    {
-        element.style.visibility="visible";
-    }
-    else
-    {
-        debug("Ack!  Start loading has failed!");
-    }
+    element.style.visibility="visible";
 }
 
 function flyoutLoadedInternal()
 {
-    if (DEBUGFINE)
-    {
-        debugFine("flyoutLoadedInternal()");
-    }
-
     flyoutStartLoading();
     var element = System.Gadget.Flyout.document.getElementById('content');
     if (element)
     {
         // Clear any old contents.
-        if (DEBUG)
-        {
-            debug("Clearing flyout contents...");
-        }
-
         while(element.children && element.children.length > 0)
         {
-            if (DEBUG)
-            {
-                debug("Clearing " + element.id);
-            }
             element.removeChild(element.children(0));
         }
 
@@ -338,10 +310,6 @@ function flyoutLoadedInternal()
         var numSignificantChildren = 0;
         for (var index=0; index<numChildren; index++)
         {
-            if (DEBUGFINE)
-            {
-                debugFine("Calculating child size for child " + index + ": " + sortedChildren[index]);
-            }
             childSizesPercents[index] = sortedChildren[index].size / targetSizeBytes;
             childSizesDegrees[index] = 360* (sortedChildren[index].size / targetSizeBytes);
             if (childSizesPercents[index] > minPercentWorthDrawing)
@@ -353,10 +321,6 @@ function flyoutLoadedInternal()
         var increment = 1 / numSignificantChildren;
         for (var index=0; index<numSignificantChildren; index++)
         {
-            if (DEBUGFINE)
-            {
-                debugFine("Calculating child colors for significant child " + index);
-            }
             var childIndexAsPercent = (index === 0 ? 0 : index / numSignificantChildren);
             childColors[index] = new Object;
             childColors[index].color1 = linearArrayInterpolateFromHex(
@@ -600,7 +564,6 @@ function cancel()
 function setSize(size)
 {
     var targetHeight = size.height;
-    var initialTop = document.parentWindow.screenTop;
     if (DEBUG)
     {
         targetHeight += 200;
@@ -630,9 +593,9 @@ function setSize(size)
 
     if (gadgetState.firstResize == false
         && gadgetState.noResizeNotification == false
-        && anythingChanged)
+        && anythingChanged == true)
     {
-        showGadgetChangedPagesFlyout();
+        showModeChangedFlyout();
     }
 
     // Only ignore the first resize, as we're starting up.
@@ -1554,34 +1517,18 @@ function finishUp()
         setVisible(gadgetState.cancelButtonId, false);
         setEnabled(gadgetState.cancelButtonId, false);
 
-        if (DEBUG)
-        {
-            debug("calling updateTargetResults(" + gadgetState.targetPieDivId + ")");
-        }
         updateTargetResults(gadgetState.targetPieDivId);
-        if (DEBUG)
-        {
-            debug("calling updateChildrenResults(" + gadgetState.childrenPieDivId + ")");
-        }
         updateChildrenResults(gadgetState.childrenPieDivId);
 
         if (System.Gadget.Flyout.show)
         {
             // Flyout already showing, must update
-            if (DEBUG)
-            {
-                debug("Flyout was already showing, updating...");
-            }
             flyoutLoaded();
         }
         else if (gadgetState.showFlyoutOnFinish === true)
         {
             // Flyout not yet showing, but has been requested;
             // Start the display.
-            if (DEBUG)
-            {
-                debug("Flyout was not showing, showing now...");
-            }
             gadgetState.showFlyoutOnFinish = false;
             showAnalysisFlyout();
         }
@@ -2074,11 +2021,11 @@ function processOptionUpdates()
 function initOptions()
 {
     var isFirstTime = !readBooleanSetting('hasBeenRun');
-    if (isFirstTime)
+    if (isFirstTime == true)
     {
-        writeBooleanSetting('noResize', 'false');
-        writeBooleanSetting('noResizeNotification', 'false');
-        writeBooleanSetting('hasBeenRun', 'true');
+        writeBooleanSetting('noResize', false);
+        writeBooleanSetting('noResizeNotification', false);
+        writeBooleanSetting('hasBeenRun', true);
     }
     gadgetState.noResize = readBooleanSetting('noResize');
     gadgetState.noResizeNotification = readBooleanSetting('noResizeNotification');
