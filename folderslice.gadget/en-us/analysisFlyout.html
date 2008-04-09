@@ -4,29 +4,35 @@
     <title>Folder Slice</title>
     <link rel="stylesheet" type="text/css" href="css/analysisFlyout.css" />
     <script language="javascript" type="text/javascript">
+    
     function init()
     {
+        System.Gadget.document.parentWindow.debug("analysis flyout initialized");
         System.Gadget.document.parentWindow.flyoutLoaded();
     }
 
     function flyoutNavigate(path)
     {
+        System.Gadget.document.parentWindow.debug("analysis flyout navigating to " + path);
         System.Gadget.document.parentWindow.flyoutNavigate(path);
     }
 
     function flyoutExplore(path)
     {
+        System.Gadget.document.parentWindow.debug("analysis flyout exploring " + path);
         System.Shell.execute('"' + path + '"');
     }
 
     function flyoutRefresh()
     {
+        System.Gadget.document.parentWindow.debug("analysis flyout refreshing");
         System.Gadget.document.parentWindow.gadgetState.showFlyoutOnFinish = true;
         System.Gadget.document.parentWindow.refresh();
     }
 
     function flyoutUpOneLevel()
     {
+        System.Gadget.document.parentWindow.debug("analysis flyout navigating up one level");
         System.Gadget.document.parentWindow.gadgetState.showFlyoutOnFinish = true;
         System.Gadget.document.parentWindow.parentNavigate();
     }

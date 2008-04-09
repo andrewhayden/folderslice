@@ -10,6 +10,19 @@ var minDegreesWorthDrawing = minPercentWorthDrawing * 360;
 var fileSystemActiveX = new ActiveXObject("Scripting.FileSystemObject");
 var DEBUG = false;
 var DEBUGFINE = false;
+var FLYOUT_NONE = 0;
+var FLYOUT_ERROR = 1;
+var FLYOUT_ANALYSIS = 2;
+var FLYOUT_PAGECHANGED = 3;
+var SCREEN_TITLE = 0;
+var SCREEN_PROCESSING = 1;
+var SCREEN_RESULTS = 2;
+
+document.onreadystatechange = function()
+{
+    // Settings stuff
+    System.Gadget.settingsUI = "settings.html";
+}
 
 function startup()
 {
@@ -26,26 +39,14 @@ function startup()
     }
     catch(error)
     {
-        var errorText = error.name + ": " + error;
-        if (error.message)
-        {
-            errorText += ": " + error.message;
-        }
-        else if (error.cause)
-        {
-            errorText += ": " + error.cause;
-        }
-        else if (error.description)
-        {
-            errorText += ": " + error.description;
-        }
-
-        if (DEBUG) debug(errorText);
+        handleError(error);
     }
 }
 
 function startupInternal()
 {
+    initOptions();
+
     // Information for the various sizing options.
     sizingInfo.small = new Object;
     sizingInfo.small.width = 130;
@@ -95,12 +96,15 @@ function startupInternal()
     gadgetState.childSliceColors[2].color1 = "#0000ff";
     gadgetState.childSliceColors[2].color2 = "#000040";
     gadgetState.showFlyoutOnFinish = false;
-    gadgetState.errorShowing = false;
     gadgetState.errorText = "";
     gadgetState.errorDetails = "";
     gadgetState.lastTallyState = undefined;
-    gadgetState.lastTopDetected = 0;
-    gadgetState.gadgetChangedPagesFlyoutShowing = false;
+    gadgetState.currentScreen = SCREEN_TITLE;
+    gadgetState.currentFlyout = FLYOUT_NONE;
+    gadgetState.firstResize = true;
+
+    // Flyout onHide:
+    System.Gadget.Flyout.onHide = flyoutHidden;
 
     // Flyout state information
     flyoutState.invocationCounter = gadgetState.invocationCounter - 1;
@@ -145,20 +149,16 @@ function startupInternal()
 
 function showAnalysisFlyout()
 {
+    // Don't get rid of an existing flyout, ever.
+    if (gadgetState.currentFlyout != FLYOUT_NONE) return;
+
+    gadgetState.currentFlyout = FLYOUT_ANALYSIS;
     if (gadgetState.lastDetailsInvocationCounter != gadgetState.invocationCounter)
     {
         System.Gadget.Flyout.file =  'analysisFlyout.html';
     }
     System.Gadget.Flyout.show = true;
     gadgetState.lastDetailsInvocationCounter = gadgetState.invocationCounter;
-}
-
-function hideAnalysisFlyout()
-{
-    if (!gadgetState.errorShowing)
-    {
-        System.Gadget.Flyout.show = false;
-    }
 }
 
 function getErrorText()
@@ -173,16 +173,16 @@ function getErrorDetails()
 
 function showErrorFlyout(errorText)
 {
-    hideAnalysisFlyout();
+    debug("showErrorFlyout()");
+    hideFlyouts();
+    gadgetState.currentFlyout = FLYOUT_ERROR;
 
     setProgressIndicatorError();
     document.getElementById('processingLabel').innerText="Error...";
     document.getElementById(gadgetState.cancelButtonId).innerText="OK";
     System.Gadget.Flyout.file =  'errorFlyout.html';
-    gadgetState.errorShowing = true;
     gadgetState.errorText = errorText;
     gadgetState.errorDetails = undefined;
-    debug("showing error");
     try
     {
         var tallyState = gadgetState.lastTallyState;
@@ -225,33 +225,22 @@ function showErrorFlyout(errorText)
     System.Gadget.Flyout.show = true;
 }
 
-function hideErrorFlyout()
+function hideFlyouts()
 {
-    if (gadgetState.errorShowing)
-    {
-        gadgetState.errorShowing = false;
-        System.Gadget.Flyout.show = false;
-    }
+    gadgetState.currentFlyout = FLYOUT_NONE;
+    System.Gadget.Flyout.show = false;
 }
 
 function showGadgetChangedPagesFlyout()
 {
-    hideAnalysisFlyout();
+    // Don't get rid of an existing flyout, ever.
+    if (gadgetState.currentFlyout == FLYOUT_ERROR) return;
+
+    gadgetState.currentFlyout = FLYOUT_PAGECHANGED;
     System.Gadget.Flyout.file =  'gadgetChangedPagesFlyout.html';
-    gadgetState.gadgetChangedPagesFlyoutShowing = true;
     debug("showing gadget-changed-pages notification");
     System.Gadget.Flyout.show = true;
 }
-
-function hideGadgetChangedPagesFlyout()
-{
-    if (gadgetState.gadgetChangedPagesFlyoutShowing)
-    {
-        gadgetState.gadgetChangedPagesFlyoutShowing = false;
-        System.Gadget.Flyout.show = false;
-    }
-}
-
 
 function flyoutLoaded()
 {
@@ -261,45 +250,59 @@ function flyoutLoaded()
     }
     catch(error)
     {
-        var errorText = error.name + ": " + error;
-        if (error.message)
-        {
-            errorText += ": " + error.message;
-        }
-        else if (error.cause)
-        {
-            errorText += ": " + error.cause;
-        }
-        else if (error.description)
-        {
-            errorText += ": " + error.description;
-        }
-
-        if (DEBUG) debug(errorText);
+        handleError(error);
     }
 }
 
 function flyoutDoneLoading()
 {
     var element = System.Gadget.Flyout.document.getElementById('progress');
-    element.style.visibility="hidden";
+    if (element)
+    {
+        element.style.visibility="hidden";
+    }
+    else
+    {
+        debug("Ack!  Done loading has failed!");
+    }
 }
 
 function flyoutStartLoading()
 {
     var element = System.Gadget.Flyout.document.getElementById('progress');
-    element.style.visibility="visible";
+    if (element)
+    {
+        element.style.visibility="visible";
+    }
+    else
+    {
+        debug("Ack!  Start loading has failed!");
+    }
 }
 
 function flyoutLoadedInternal()
 {
+    if (DEBUGFINE)
+    {
+        debugFine("flyoutLoadedInternal()");
+    }
+
     flyoutStartLoading();
     var element = System.Gadget.Flyout.document.getElementById('content');
     if (element)
     {
         // Clear any old contents.
+        if (DEBUG)
+        {
+            debug("Clearing flyout contents...");
+        }
+
         while(element.children && element.children.length > 0)
         {
+            if (DEBUG)
+            {
+                debug("Clearing " + element.id);
+            }
             element.removeChild(element.children(0));
         }
 
@@ -319,6 +322,11 @@ function flyoutLoadedInternal()
         element.appendChild(summaryWrapper);
         element.appendChild(childOuterWrapper);
 
+        if (DEBUG)
+        {
+            debug("Preparing to populate...");
+        }
+
         // Figure out sizes and colors.
         var sortedChildren = gadgetState.sortedTargetChildren;
         var numChildren = sortedChildren.length;
@@ -330,6 +338,10 @@ function flyoutLoadedInternal()
         var numSignificantChildren = 0;
         for (var index=0; index<numChildren; index++)
         {
+            if (DEBUGFINE)
+            {
+                debugFine("Calculating child size for child " + index + ": " + sortedChildren[index]);
+            }
             childSizesPercents[index] = sortedChildren[index].size / targetSizeBytes;
             childSizesDegrees[index] = 360* (sortedChildren[index].size / targetSizeBytes);
             if (childSizesPercents[index] > minPercentWorthDrawing)
@@ -341,6 +353,10 @@ function flyoutLoadedInternal()
         var increment = 1 / numSignificantChildren;
         for (var index=0; index<numSignificantChildren; index++)
         {
+            if (DEBUGFINE)
+            {
+                debugFine("Calculating child colors for significant child " + index);
+            }
             var childIndexAsPercent = (index === 0 ? 0 : index / numSignificantChildren);
             childColors[index] = new Object;
             childColors[index].color1 = linearArrayInterpolateFromHex(
@@ -569,7 +585,7 @@ function cancel()
         gadgetState.invocationCounter++;
         clearTimeout(gadgetState.timerId);
         gadgetState.timerId = 0;
-        hideErrorFlyout();
+        hideFlyouts();
         setVisible(gadgetState.progressIndicatorId, false);
         showTitleScreen();
 
@@ -583,49 +599,60 @@ function cancel()
 
 function setSize(size)
 {
-    document.body.style.pixelWidth=size.width;
-    if (!DEBUG)
+    var targetHeight = size.height;
+    var initialTop = document.parentWindow.screenTop;
+    if (DEBUG)
     {
-        document.body.style.pixelHeight=size.height;
+        targetHeight += 200;
     }
-    else
-    {
-        document.body.style.pixelHeight=size.height + 200;
-    }
-    document.body.style.backgroundImage="url(\"" + size.background + "\")";
 
-    if (gadgetState.gadgetChangedPagesDetection === undefined)
+    var anythingChanged = false;
+    if (document.body.style.pixelWidth === undefined
+        || (document.body.style.pixelWidth != size.width))
     {
-        // First call to this method (app is starting up).
-        // Turn detection on for all future calls, do nothing now.
-        gadgetState.gadgetChangedPagesDetection = true;
+        document.body.style.width = size.width + "px";
+        document.body.style.pixelWidth = size.width;
+        anythingChanged = true;
     }
-    else if (gadgetState.gadgetChangedPagesDetection === true)
+    
+    if (document.body.style.pixelHeight === undefined
+        || (document.body.style.pixelHeight != targetHeight))
     {
-        gadgetState.lastTopDetected = document.parentWindow.screenTop;
-        setTimeout('detectGadgetChangedPages()', 1);
+        document.body.style.height = targetHeight + "px";
+        document.body.style.pixelHeight = targetHeight;
+        anythingChanged = true;
     }
-}
 
-function detectGadgetChangedPages()
-{
-    if (gadgetState.gadgetChangedPagesDetection)
+    if (anythingChanged == true)
     {
-        if (gadgetState.lastTopDetected != document.parentWindow.screenTop)
-        {
-            // Gadget's top has moved during resize.  This means the gadget
-            // has been relocated to somewhere else in the sidebar!
-            showGadgetChangedPagesFlyout();
-        }
+        document.body.style.backgroundImage="url(\"" + size.background + "\")";
     }
+
+    if (gadgetState.firstResize == false
+        && gadgetState.noResizeNotification == false
+        && anythingChanged)
+    {
+        showGadgetChangedPagesFlyout();
+    }
+
+    // Only ignore the first resize, as we're starting up.
+    gadgetState.firstResize = false;
 }
 
 function showProcessingScreen()
 {
-    setSize(sizingInfo.small);
+    if (gadgetState.noResize == false)
+    {
+        setSize(sizingInfo.small);
+    }
+    else
+    {
+        setSize(sizingInfo.normal);
+    }
     hideResultsScreen();
     hideTitleScreen();
     setVisible('processingScreen', true);
+    gadgetState.currentScreen = SCREEN_PROCESSING;
 }
 
 function hideProcessingScreen()
@@ -653,6 +680,7 @@ function showResultsScreen()
     hideProcessingScreen();
     hideTitleScreen();
     setVisible('resultsScreen', true);
+    gadgetState.currentScreen = SCREEN_RESULTS;
 }
 
 function hideResultsScreen()
@@ -666,11 +694,19 @@ function hideResultsScreen()
 
 function showTitleScreen()
 {
-    setSize(sizingInfo.small);
+    if (gadgetState.noResize == false)
+    {
+        setSize(sizingInfo.small);
+    }
+    else
+    {
+        setSize(sizingInfo.normal);
+    }
     hideProcessingScreen();
     hideResultsScreen();
-    hideAnalysisFlyout();
+    hideFlyouts();
     setVisible('titleScreen', true);
+    gadgetState.currentScreen = SCREEN_TITLE;
 }
 
 function hideTitleScreen()
@@ -726,22 +762,7 @@ function dropShipment()
     }
     catch(error)
     {
-        var errorText = error.name + ": " + error;
-        if (error.message)
-        {
-            errorText += ": " + error.message;
-        }
-        else if (error.cause)
-        {
-            errorText += ": " + error.cause;
-        }
-        else if (error.description)
-        {
-            errorText += ": " + error.description;
-        }
-
-        if (DEBUG) debug(errorText);
-        showErrorFlyout(errorText);
+        handleError(error);
     }
 }
 
@@ -753,22 +774,7 @@ function runloopDebug(invocationCounter)
     }
     catch(error)
     {
-        var errorText = error.name + ": " + error;
-        if (error.message)
-        {
-            errorText += ": " + error.message;
-        }
-        else if (error.cause)
-        {
-            errorText += ": " + error.cause;
-        }
-        else if (error.description)
-        {
-            errorText += ": " + error.description;
-        }
-
-        if (DEBUG) debug(errorText);
-        showErrorFlyout(errorText);
+        handleError(error);
     }
 }
 
@@ -777,7 +783,7 @@ function runloopDebug(invocationCounter)
  */
 function kickOff(droppedItem)
 {
-    hideAnalysisFlyout();
+    hideFlyouts();
     setProgressIndicatorProgress();
     var target;
     if (droppedItem.isLink)
@@ -835,7 +841,16 @@ function kickOff(droppedItem)
 
 function updateStats(idSuffix, maxFolderChars, folderName, percent, sizeBytes, numFiles)
 {
-    var formattedPercent = (percent < 0.1 ? "0" : "") + (percent * 100).toFixed(1);
+    var formattedPercent;
+    if (sizeBytes > 0)
+    {
+        formattedPercent = (percent < 0.1 ? "0" : "") + (percent * 100).toFixed(1);
+    }
+    else
+    {
+        formattedPercent = "00.0";
+    }
+
     var formattedSize = formatSizeNice(sizeBytes);
 
     var element = document.getElementById("folderName" + idSuffix);
@@ -861,7 +876,15 @@ function updateStats(idSuffix, maxFolderChars, folderName, percent, sizeBytes, n
 
 function updateFlyoutStats(flyoutElement, childIndex, numChildren, folderLocation, folderName, percent, sizeBytes, numFiles, color1, color2)
 {
-    var formattedPercent = (percent < 0.1 ? "0" : "") + (percent * 100).toFixed(1);
+    var formattedPercent;
+    if (sizeBytes > 0)
+    {
+        formattedPercent = (percent < 0.1 ? "0" : "") + (percent * 100).toFixed(1);
+    }
+    else
+    {
+        formattedPercent = "00.0";
+    }
     var formattedSize = formatSizeNice(sizeBytes);
 
     var element = flyoutElement.folderslice.locationSpan;
@@ -1058,21 +1081,7 @@ function flyoutLoopDebug()
     }
     catch(error)
     {
-        var errorText = error.name + ": " + error;
-        if (error.message)
-        {
-            errorText += ": " + error.message;
-        }
-        else if (error.cause)
-        {
-            errorText += ": " + error.cause;
-        }
-        else if (error.description)
-        {
-            errorText += ": " + error.description;
-        }
-
-        if (DEBUG) debug(errorText);
+        handleError(error);
     }
 }
 
@@ -1438,11 +1447,17 @@ function childNavigate(childId)
  */
 function getParent(path)
 {
+    if (DEBUG)
+    {
+        debug("Looking up parent for path: " + path);
+    }
+
     var indexOfFileSeparator = path.lastIndexOf("\\");
     if (indexOfFileSeparator >= 0 && indexOfFileSeparator < path.length - 1)
     {
         var newPath = path.substr(0, indexOfFileSeparator);
-        return System.Shell.itemFromPath(newPath);
+        var folder = System.Shell.itemFromPath(newPath);
+        return folder;
     }
     else
     {
@@ -1477,6 +1492,18 @@ function getDriveLetter(path)
  */
 function parentNavigate()
 {
+    try
+    {
+        parentNavigateDebug();
+    }
+    catch(error)
+    {
+        handleError(error);
+    }
+}
+
+function parentNavigateDebug()
+{
     var parent = getParent(gadgetState.target.path);
     if (parent)
     {
@@ -1504,6 +1531,11 @@ function finishUp()
     {
         gadgetState.lastTallyState = undefined;
         var parent = getParent(gadgetState.target.path);
+        if (DEBUG)
+        {
+            debug("finishUp(): parent=" + parent);
+        }
+
         if (parent !== undefined)
         {
             setVisible("parentGoButton", true);
@@ -1513,43 +1545,50 @@ function finishUp()
             setVisible("parentGoButton", false);
         }
 
+        if (DEBUG)
+        {
+            debug("calling showResultsScreen()");
+        }
         showResultsScreen();
         setVisible(gadgetState.progressIndicatorId, false);
         setVisible(gadgetState.cancelButtonId, false);
         setEnabled(gadgetState.cancelButtonId, false);
 
+        if (DEBUG)
+        {
+            debug("calling updateTargetResults(" + gadgetState.targetPieDivId + ")");
+        }
         updateTargetResults(gadgetState.targetPieDivId);
+        if (DEBUG)
+        {
+            debug("calling updateChildrenResults(" + gadgetState.childrenPieDivId + ")");
+        }
         updateChildrenResults(gadgetState.childrenPieDivId);
+
         if (System.Gadget.Flyout.show)
         {
             // Flyout already showing, must update
-            flyoutLoadedInternal();
+            if (DEBUG)
+            {
+                debug("Flyout was already showing, updating...");
+            }
+            flyoutLoaded();
         }
         else if (gadgetState.showFlyoutOnFinish === true)
         {
             // Flyout not yet showing, but has been requested;
             // Start the display.
+            if (DEBUG)
+            {
+                debug("Flyout was not showing, showing now...");
+            }
             gadgetState.showFlyoutOnFinish = false;
             showAnalysisFlyout();
         }
     }
     catch(error)
     {
-        var errorText = error.name + ": " + error;
-        if (error.message)
-        {
-            errorText += ": " + error.message;
-        }
-        else if (error.cause)
-        {
-            errorText += ": " + error.cause;
-        }
-        else if (error.description)
-        {
-            errorText += ": " + error.description;
-        }
-
-        if (DEBUG) debug(errorText);
+        handleError(error);
     }
 }
 
@@ -1893,11 +1932,154 @@ function setProgressIndicatorProgress()
     document.getElementById(gadgetState.progressIndicatorId).src="images/progress.gif";
 }
 
-function dismissGadgetChangedPagesFlyout(dontShowAgain)
+function dismissGadgetChangedPagesFlyout(noResize, noResizeNotification)
 {
-    if (dontShowAgain && dontShowAgain === true)
+    if (gadgetState.noResize == false)
     {
-        gadgetState.gadgetChangedPagesDetection = false;
-        hideGadgetChangedPagesFlyout();
+        gadgetState.noResize = noResize;
     }
+    writeBooleanSetting('noResize', noResize);
+
+    if (noResizeNotification && noResizeNotification == true)
+    {
+        gadgetState.noResizeNotification = true;
+    }
+    writeBooleanSetting('noResizeNotification', noResizeNotification);
+
+    hideFlyouts();
+}
+
+function handleError(error)
+{
+    var errorText = error.name + ": " + error;
+    if (error.message)
+    {
+        errorText += ": " + error.message;
+    }
+    else if (error.cause)
+    {
+        errorText += ": " + error.cause;
+    }
+    else if (error.description)
+    {
+        errorText += ": " + error.description;
+    }
+    errorText += "\n" + stackTrace(arguments.callee);
+    //errorText += "; callee=" + arguments.callee.toString();
+    //errorText += "; caller=" + arguments.callee.caller.toString();
+
+    if (DEBUG) debug(errorText);
+    showErrorFlyout(errorText);
+}
+
+// This function based on "DIY javascript stack trace" by Helen Emerson.
+// Retrieved 07 April 2008 from: http://www.helephant.com/Article.aspx?ID=675
+function getFunctionName(theFunction)
+{
+    // try to parse the function name from the defintion
+    var definition = theFunction.toString();
+    var name = definition.substring(definition.indexOf('function') + 8,definition.indexOf('('));
+    if(name)
+        return name;
+    // sometimes there won't be a function name 
+    // like for dynamic functions
+    return "anonymous";
+}
+
+// This function based on "DIY javascript stack trace" by Helen Emerson.
+// Retrieved 07 April 2008 from: http://www.helephant.com/Article.aspx?ID=675
+function getSignature(theFunction)
+{
+    var signature = getFunctionName(theFunction);
+    signature += "(";
+    for(var x=0; x<theFunction.arguments.length; x++)
+    {
+        // trim long arguments
+        var nextArgument = theFunction.arguments[x];
+        if(nextArgument.length > 30)
+            nextArgument = nextArgument.substring(0, 30) + "...";
+        
+        // apend the next argument to the signature
+        signature += "'" + nextArgument + "'"; 
+        
+        // comma separator
+        if(x < theFunction.arguments.length - 1)
+            signature += ", ";
+    }
+    signature += ")";
+    return signature;
+}
+
+// This function based on "DIY javascript stack trace" by Helen Emerson.
+// Retrieved 07 April 2008 from: http://www.helephant.com/Article.aspx?ID=675
+function stackTrace(startingPoint)
+{
+    var stackTraceMessage = "Stack trace:\n";
+    var nextCaller = startingPoint;
+    while(nextCaller)
+    {
+        stackTraceMessage += getSignature(nextCaller) + "\n";
+        nextCaller = nextCaller.caller;
+    }
+    stackTraceMessage += "";
+    return stackTraceMessage;
+}
+
+function flyoutHidden()
+{
+    if (DEBUG)
+    {
+        debug("Flyout hidden.");
+    }
+    gadgetState.currentFlyout = FLYOUT_NONE;
+}
+
+function writeBooleanSetting(settingName, value)
+{
+    if(value && value == true)
+    {
+        System.Gadget.Settings.writeString(settingName, "true");
+    }
+    else
+    {
+        System.Gadget.Settings.writeString(settingName, "false");
+    }
+}
+
+function readBooleanSetting(settingName)
+{
+    var value = System.Gadget.Settings.readString(settingName);
+    return (value && value == "true");
+}
+
+function optionsUpdated()
+{
+    setTimeout('processOptionUpdates()', 1);
+}
+
+function processOptionUpdates()
+{
+    if (gadgetState.noResize)
+    {
+        // Make sure we're not in compact mode any longer.
+        setSize(sizingInfo.normal);
+    }
+    else if (gadgetState.currentScreen != SCREEN_RESULTS)
+    {
+        // Compact mode re-enabled, so switch to it if possible.
+        setSize(sizingInfo.small);
+    }
+}
+
+function initOptions()
+{
+    var isFirstTime = !readBooleanSetting('hasBeenRun');
+    if (isFirstTime)
+    {
+        writeBooleanSetting('noResize', 'false');
+        writeBooleanSetting('noResizeNotification', 'false');
+        writeBooleanSetting('hasBeenRun', 'true');
+    }
+    gadgetState.noResize = readBooleanSetting('noResize');
+    gadgetState.noResizeNotification = readBooleanSetting('noResizeNotification');
 }
