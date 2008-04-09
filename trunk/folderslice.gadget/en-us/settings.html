@@ -1,0 +1,88 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>FolderSlice Settings</title>
+    <link rel="stylesheet" type="text/css" href="css/settings.css" />
+    <script language="javascript" type="text/javascript">
+    function init()
+    {
+        System.Gadget.onSettingsClosing = settingsClosing;    
+        document.getElementById('noResize').checked =
+            readBooleanSetting('noResize');
+        document.getElementById('noResizeNotification').checked =
+            readBooleanSetting('noResizeNotification');
+    }
+    
+    function settingsClosing(event)
+    {
+        if (event.closeAction == event.Action.commit)
+        {
+            writeBooleanSetting('noResize',
+                document.getElementById('noResize').checked);
+            writeBooleanSetting('noResizeNotification',
+                document.getElementById('noResizeNotification').checked);
+
+            System.Gadget.document.parentWindow.gadgetState.noResize =
+                readBooleanSetting('noResize');
+            System.Gadget.document.parentWindow.gadgetState.noResizeNotification =
+                readBooleanSetting('noResizeNotification');
+            System.Gadget.document.parentWindow.optionsUpdated();
+
+            // This line allows the settings window to close.
+            event.cancel = false;
+        }
+    }
+    
+    function writeBooleanSetting(settingName, value)
+    {
+        if(value && value == true)
+        {
+            System.Gadget.Settings.writeString(settingName, "true");
+        }
+        else
+        {
+            System.Gadget.Settings.writeString(settingName, "false");
+        }
+    }
+
+    function readBooleanSetting(settingName)
+    {
+        var value = System.Gadget.Settings.readString(settingName);
+        return (value && value == "true");
+    }
+    </script>
+</head>
+<body onload="init()">
+
+    <strong>Please Note:</strong> Options reset to defaults
+    if the gadget is removed from the Sidebar.
+    <br><br>
+
+    <table class='mainTable' cellspacing=0 cellpadding=0>
+        <tr>
+            <td><input type=checkbox id='noResize'></input></td>
+            <td>Disable Compact Mode</td>
+        </tr>
+        <tr>
+            <td></td>
+            <td class='description'>By default, FolderSlice starts up
+            in Compact Mode and switches to Full Mode when analysis completes.
+            This may cause the Sidebar to rearrange your gadgets.
+            If you select this option, FolderSlice will always run in Full Mode.
+            </td>
+        </tr>
+        <tr>
+            <td><input type=checkbox id='noResizeNotification'></input></td>
+            <td>Don't notify me when changing Mode</td>
+        </tr>
+        <tr>
+            <td></td>
+            <td class='description'>By default, FolderSlice will notify you
+            when it switches between Compact Mode and Full Mode, in case
+            your Sidebar is rearranged by the switch.
+            If you select this option, FolderSlice will no longer notify you
+            when changing Mode.</td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -13,7 +13,6 @@ body
     height: 100px;
     padding: 2px;
     line-height: 16px;
-    overflow: hidden;
     background-image: url('../images/error-background.png');
     background-attachment: fixed;
     background-position: top left;

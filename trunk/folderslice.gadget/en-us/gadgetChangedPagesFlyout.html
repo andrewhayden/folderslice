@@ -6,27 +6,46 @@
     <script language="javascript" type="text/javascript">
     function dismiss()
     {
-        var dontShowAgain = document.getElementById('dontShowAgain').checked;
-        System.Gadget.document.parentWindow.dismissGadgetChangedPagesFlyout(dontShowAgain);
+        var noResize = document.getElementById('noResize').checked;
+        var noResizeNotification = document.getElementById('noResizeNotification').checked;
+        System.Gadget.document.parentWindow.dismissGadgetChangedPagesFlyout(noResize, noResizeNotification);
+    }
+
+    function init()
+    {
+        document.getElementById('noResize').checked =
+            System.Gadget.document.parentWindow.readBooleanSetting('noResize');
+        document.getElementById('noResizeNotification').checked =
+            System.Gadget.document.parentWindow.readBooleanSetting('noResizeNotification');
     }
     </script>
 </head>
 <body onload='init()' style='color: rgb(225,225,225)'>
 <span style='font-size: 0px;'><a href='http://code.google.com/p/folderslice/'></a></span><img id='example' class='example' src='../images/sidebarNavigation.png'>
-<span id='titleText' class='titleText'>Where did my Gadget(s) go?!</span>
+<span id='titleText' class='titleText'>FolderSlice: Mode Changed</span>
 <br>
 <span id='messageText' class='messageText'>
-FolderSlice has resized itself.  Because it was at the edge of your Sidebar,
-Windows Vista has moved it (and perhaps some of your other gadgets)
-to a different panel in the Sidebar.
+FolderSlice switched between Compact and Full Mode, and as a result its size
+has changed.  This may have caused your Sidebar to rearrange itself.  Use the
+Options to change this behavior (right-click the gadget and select "Options").
 <br><br>
-At the top of your Sidebar you should see a "+" button as
-well as arrows pointing left and right.  You can use the left and right
-arrows to visit the other panels in the Sidebar and locate FolderSlice.
+At the top of your Sidebar you should see the buttons pictured above.
+Use the left and right arrows to visit the other panels in the Sidebar,
+where gadgets may have been moved to.
 <br>
 <center>
-    <button id='dismiss' class='dismiss' onclick='dismiss()'>OK</button>
-    <input id='dontShowAgain' type='checkbox' checked>Don't show again (till Sidebar restarts)</input>
+    <table cellspacing=0 cellpadding=0 border=0>
+        <tr>
+            <td valign='top' align='center'>
+                <button id='dismiss' class='dismiss' onclick='dismiss()'>OK</button>
+            </td>
+            <td valign='top' align='left'>
+                <input id='noResize' type='checkbox'>Disable compact mode</input>
+                <br>
+                <input id='noResizeNotification' type='checkbox'>Don't notify me about this again</input>
+            </td>
+        </tr>
+    </table>
 </center>
 </span>
 </body>
